@@ -140,6 +140,12 @@ const Home = () => {
           <h3>Select user or chat</h3>
         )}
       </div>
+      {/* Logout Demo button */}
+      <div className="bg-blue-700 w-c">
+        <button>
+          LogOut
+        </button>
+      </div>
     </div>
   );
 };

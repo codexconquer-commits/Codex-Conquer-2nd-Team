@@ -1,5 +1,5 @@
 import Axios from "axios";
-import { Lock, Mail } from "lucide-react";
+import { Lock, Mail,User } from "lucide-react";
 import { useContext, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { toast, ToastContainer } from "react-toastify";
@@ -97,12 +97,12 @@ const SignUp = () => {
               Full Name
             </label>
             <div className="relative">
-              <Mail
+              <User
                 size={18}
                 className="absolute left-3 top-1/2 -translate-y-1/2 text-blue-400"
               />
               <input
-                type="email"
+                type="text"
                 placeholder="John Doe"
                 value={formData.fullName}
                 onChange={(e) =>
@@ -179,11 +179,7 @@ const SignUp = () => {
             Sign Up
           </button>
 
-          <div className="text-center text-sm my-3 opacity-80 text-blue-500">
-            OR
-          </div>
-
-          <p className="text-sm text-center mt-6 text-blue-600">
+          <p className="text-sm text-center mt-2 text-blue-600">
             Already Have An Account?{" "}
             <Link
               to="/login"

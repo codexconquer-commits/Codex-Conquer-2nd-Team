@@ -76,7 +76,7 @@ const Login = () => {
       </div>
 
       {/* Right Panel */}
-      <div className="flex items-center justify-center bg-blue-50">
+      <div className="flex items-center h-[100vh] justify-center  bg-blue-50">
         <div className="w-full max-w-md bg-white rounded-2xl p-10 shadow-2xl border border-blue-100">
 
           {/* Logo */}
@@ -143,6 +143,18 @@ const Login = () => {
             Log In
           </button>
 
+            {/* Forget PassLink Link */}
+          <p className="text-sm text-center mt-2 text-red-600">
+            {" "}
+            <Link
+              to="/forgetPassword"
+              className="text-red-600 font-medium hover:underline"
+            >
+              Forget Password
+            </Link>
+          </p>
+
+          {/* SignUp Link */}
           <p className="text-sm text-center mt-6 text-blue-600">
             Don’t Have An Account?{" "}
             <Link

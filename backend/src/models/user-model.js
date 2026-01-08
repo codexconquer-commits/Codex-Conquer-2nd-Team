@@ -16,13 +16,18 @@ const userSchema =  mongoose.Schema({
     min: [1000000000, "Contact number must be a 10-digit number"],
     max: [9999999999, "Contact number must be a 10-digit number"]
   },
-  
+
   password:{
     type:String,
 
   },
+      otp: {
+        type: String
+    },
+     otpExpiry: { type: Date },
 
 },
+
 {
   timestamps:true,
 }

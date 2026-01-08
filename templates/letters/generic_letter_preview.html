@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>{{ title }} Preview</title>
+    <style>
+        body {
+            font-family: "Times New Roman", serif;
+            margin: 60px;
+            background: #f4f6f8;
+        }
+        .letter {
+            background: white;
+            padding: 40px;
+            line-height: 1.8;
+        }
+        .editable {
+            outline: none;
+        }
+        .btn {
+            margin-top: 30px;
+            padding: 10px 20px;
+            background: #28a745;
+            color: white;
+            border: none;
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body>
+
+<div class="letter">
+
+    <p contenteditable="true" class="editable" id="date">
+        Date: {{ today }}
+    </p>
+
+    <p contenteditable="true" class="editable" id="greeting">
+        Dear {{ name }},
+    </p>
+
+    <p contenteditable="true" class="editable" id="body">
+        {{ body }}
+    </p>
+
+    <p contenteditable="true" class="editable" id="closing">
+        Sincerely,<br>
+        HR Department
+    </p>
+
+</div>
+
+<form method="post" action="/finalize-generic-letter">
+    <input type="hidden" name="emp_id" value="{{ emp_id }}">
+    <input type="hidden" name="title" value="{{ title }}">
+    <input type="hidden" name="letter_type" value="{{ letter_type }}">
+
+    <input type="hidden" name="date">
+    <input type="hidden" name="greeting">
+    <input type="hidden" name="body">
+    <input type="hidden" name="closing">
+
+    <button class="btn" type="submit" onclick="captureContent()">
+        Confirm & Generate PDF
+    </button>
+</form>
+
+<script>
+function captureContent() {
+    document.querySelector("input[name='date']").value =
+        document.getElementById("date").innerText;
+
+    document.querySelector("input[name='greeting']").value =
+        document.getElementById("greeting").innerText;
+
+    document.querySelector("input[name='body']").value =
+        document.getElementById("body").innerText;
+
+    document.querySelector("input[name='closing']").value =
+        document.getElementById("closing").innerText;
+}
+</script>
+
+</body>
+</html>

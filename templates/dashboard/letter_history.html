@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Letter History</title>
+    <style>
+        body {
+            font-family: Arial;
+            background: #f4f6f8;
+        }
+        table {
+            width: 90%;
+            margin: 40px auto;
+            border-collapse: collapse;
+            background: white;
+        }
+        th, td {
+            padding: 12px;
+            border: 1px solid #ccc;
+            text-align: center;
+        }
+        th {
+            background: #343a40;
+            color: white;
+        }
+        a {
+            color: #007bff;
+            text-decoration: none;
+        }
+    </style>
+</head>
+<body>
+
+<h2 style="text-align:center;">Generated Letters History</h2>
+
+<table>
+    <tr>
+        <th>ID</th>
+        <th>Employee Name</th>
+        <th>Letter Type</th>
+        <th>Generated Date</th>
+       
+        <th>Download At</th>
+         <th>Download</th>
+    </tr>
+
+    {% for letter in letters %}
+    <tr>
+        <td>{{ letter.id }}</td>
+        <td>{{ letter.name }}</td>
+        <td>{{ letter.letter_type }}</td>
+        <td>{{ letter.created_at }}</td>
+        <td>{{ letter.downloaded_at if letter.downloaded_at else "Not downloaded yet" }}</td>
+        <td>
+            <a href="/{{ letter.file_path }}" target="_blank">Download</a>
+        </td>
+    </tr>
+    {% endfor %}
+</table>
+
+</body>
+</html>

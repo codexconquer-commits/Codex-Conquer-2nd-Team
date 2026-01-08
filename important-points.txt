@@ -1,0 +1,2 @@
+Folder Structure create as ===>>> kebab-case
+React Components and Node use as ===>>> PascalCase

@@ -1,15 +1,17 @@
-import React, { useContext, useState } from "react";
-import { Mail, Lock, EyeOff } from "lucide-react";
-import { AppContext } from "../../context/Theme-Context.js";
-import {Link} from 'react-router-dom'
 import Axios from "axios";
+import { Lock, Mail } from "lucide-react";
+import { useContext, useState } from "react";
+import { Link, useNavigate } from "react-router-dom";
 import { toast, ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
+import { AppContext } from "../../context/Theme-Context.js";
+
+const DEMO_LOGO = "../../../images/download-removebg-preview.png";
 
 const Login = () => {
-  const { isDark } = useContext(AppContext);
-
   const API_BASE = import.meta.env.VITE_BASE_URL || "";
+  const { isDark } = useContext(AppContext);
+  const navigate = useNavigate();
 
   const [formData, setFormData] = useState({
     email: "",
@@ -38,92 +40,124 @@ const Login = () => {
       );
 
       toast.success("Login successful 🎉");
+      setTimeout(() => {
+        navigate("/");
+      }, 1200);
+
       console.log("Login success:", res.data);
     } catch (error) {
       toast.error(
         error?.response?.data?.message ||
-        error?.response?.data?.error ||
-        "Login failed"
+          error?.response?.data?.error ||
+          "Login failed"
       );
     }
   };
 
- return (
-  <div className="min-h-screen flex items-center justify-center bg-gradient-to-b from-[#0f1b3d] to-[#0a1025] px-4">
+  return (
+    <div className="min-h-screen grid grid-cols-1 md:grid-cols-2 bg-gradient-to-br from-blue-500 to-blue-900">
 
-    {/* Card */}
-    <div className="w-full max-w-sm bg-gradient-to-b from-[#4facfe] to-[#5f2c82] rounded-3xl p-6 shadow-2xl">
-
-      {/* Title */}
-      <h1 className="text-white text-2xl font-semibold mb-6">
-        Log in
-      </h1>
-
-      {/* Form */}
-      <form onSubmit={submitHandler} className="space-y-4">
-
-        {/* Email */}
-        <div>
-          <label className="text-white text-sm mb-1 block">
-            E-mail Address
-          </label>
-          <input
-            type="email"
-            value={formData.email}
-            onChange={(e) =>
-              setFormData({ ...formData, email: e.target.value })
-            }
-            className="w-full px-4 py-3 rounded-xl bg-white outline-none"
-          />
+      {/* Left Panel */}
+      <div className="hidden md:flex flex-col justify-center items-center bg-gradient-to-br from-blue-700 to-blue-900 text-white p-10">
+        <img
+          src={DEMO_LOGO}
+          alt="Convo Logo"
+          className="w-20 h-20 mb-4 rounded-full bg-white p-2 shadow-lg"
+        />
+        <h1 className="text-4xl font-extrabold mb-2 tracking-tight">
+          Welcome Back
+        </h1>
+        <p className="text-blue-100 mb-8 text-center max-w-xs font-medium">
+          Login to continue chatting with audio & video calls.
+        </p>
+        <div className="w-64 h-64 bg-blue-800 bg-opacity-30 rounded-3xl flex items-center justify-center shadow-xl">
+          <span className="text-6xl">🔐</span>
         </div>
+      </div>
 
-        {/* Password */}
-        <div>
-          <label className="text-white text-sm mb-1 block">
-            Password
-          </label>
-          <input
-            type="password"
-            value={formData.password}
-            onChange={(e) =>
-              setFormData({ ...formData, password: e.target.value })
-            }
-            className="w-full px-4 py-3 rounded-xl bg-white outline-none"
-          />
+      {/* Right Panel */}
+      <div className="flex items-center justify-center bg-blue-50">
+        <div className="w-full max-w-md bg-white rounded-2xl p-10 shadow-2xl border border-blue-100">
+
+          {/* Logo */}
+          <div className="flex items-center justify-center mb-6">
+            <img src={DEMO_LOGO} alt="Convo Logo" className="w-10 h-10 mr-2" />
+            <span className="text-2xl font-bold text-blue-700">Convo</span>
+          </div>
+
+          <h1 className="text-2xl font-bold text-blue-800 mb-1">
+            Login Account
+          </h1>
+          <p className="text-sm text-blue-500 mb-6">
+            Sign in to continue to Convo
+          </p>
+
+          {/* Email */}
+          <div className="mb-4">
+            <label className="text-sm mb-1 block text-blue-700">
+              E-mail Address
+            </label>
+            <div className="relative">
+              <Mail
+                size={18}
+                className="absolute left-3 top-1/2 -translate-y-1/2 text-blue-400"
+              />
+              <input
+                type="email"
+                placeholder="you@example.com"
+                value={formData.email}
+                onChange={(e) =>
+                  setFormData({ ...formData, email: e.target.value })
+                }
+                className="w-full pl-10 py-2 rounded-md border border-blue-200 text-blue-900 outline-none focus:ring-2 focus:ring-blue-400 bg-blue-50"
+              />
+            </div>
+          </div>
+
+          {/* Password */}
+          <div className="mb-6">
+            <label className="text-sm mb-1 block text-blue-700">
+              Password
+            </label>
+            <div className="relative">
+              <Lock
+                size={18}
+                className="absolute left-3 top-1/2 -translate-y-1/2 text-blue-400"
+              />
+              <input
+                type="password"
+                placeholder="••••••••"
+                value={formData.password}
+                onChange={(e) =>
+                  setFormData({ ...formData, password: e.target.value })
+                }
+                className="w-full pl-10 py-2 rounded-md border border-blue-200 text-blue-900 outline-none focus:ring-2 focus:ring-blue-400 bg-blue-50"
+              />
+            </div>
+          </div>
+
+          <button
+            onClick={submitHandler}
+            className="w-full bg-blue-700 hover:bg-blue-800 transition text-white py-2 rounded-lg font-semibold mb-4 shadow"
+          >
+            Log In
+          </button>
+
+          <p className="text-sm text-center mt-6 text-blue-600">
+            Don’t Have An Account?{" "}
+            <Link
+              to="/signup"
+              className="text-blue-700 font-medium hover:underline"
+            >
+              Sign Up
+            </Link>
+          </p>
         </div>
+      </div>
 
-        {/* Remember + Forgot */}
-        <div className="flex items-center justify-between text-sm text-white">
-          <label className="flex items-center gap-2">
-            <input type="checkbox" />
-            Remember Me
-          </label>
-          <span className="cursor-pointer underline">
-            Forgot Password?
-          </span>
-        </div>
-
-        {/* Button */}
-        <button
-          type="submit"
-          className="w-full mt-4 bg-[#0f1b3d] hover:bg-[#0c1633] text-white py-3 rounded-xl font-semibold transition"
-        >
-          Log in
-        </button>
-      </form>
+      <ToastContainer position="top-right" autoClose={3000} />
     </div>
-
-    {/* Footer */}
-    <p className="absolute bottom-6 text-sm text-gray-300">
-      Don’t Have An Account?{" "}
-      <Link to="/signup" className="text-white font-semibold">
-        Sign Up
-      </Link>
-    </p>
-
-    <ToastContainer position="top-right" autoClose={3000} />
-  </div>
-);
+  );
 };
 
 export default Login;

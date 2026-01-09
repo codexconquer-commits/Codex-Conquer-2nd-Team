@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from "react";
 import axios from "axios";
 import socket from "../../socket/socket";
+import Navbar from "../../components/Navbar";
 
 const BASE = import.meta.env.VITE_BASE_URL;
 
@@ -88,8 +89,9 @@ const Home = () => {
 
   return (
     <div style={{ display: "flex", height: "100vh" }}>
+      <Navbar />
       {/* LEFT PANEL */}
-      <div style={{ width: 300, borderRight: "1px solid gray", padding: 10 }}>
+      {/* <div style={{ width: 300, borderRight: "1px solid gray", padding: 10 }}>
         <h3>All Users</h3>
         {users.map((u) => (
           <div
@@ -113,10 +115,10 @@ const Home = () => {
             Chat {chat._id.slice(-4)}
           </div>
         ))}
-      </div>
+      </div> */}
 
       {/* RIGHT PANEL */}
-      <div style={{ flex: 1, padding: 10 }}>
+      {/* <div style={{ flex: 1, padding: 10 }}>
         {activeChat ? (
           <>
             <h3>Messages</h3>
@@ -139,13 +141,13 @@ const Home = () => {
         ) : (
           <h3>Select user or chat</h3>
         )}
-      </div>
+      </div> */}
       {/* Logout Demo button */}
-      <div className="bg-blue-700 w-c">
+      {/* <div className="bg-blue-700 w-c">
         <button>
           LogOut
         </button>
-      </div>
+      </div> */}
     </div>
   );
 };

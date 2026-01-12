@@ -66,3 +66,18 @@
 .text-lightmode {
   color: #000000;
 }
+
+
+.hide-scrollbar {
+  /* For Firefox */
+  scrollbar-width: none;
+  /* For Internet Explorer and Edge (legacy) */
+  -ms-overflow-style: none;
+  /* Keep content scrollable */
+  overflow-y: scroll; /* or overflow: auto */
+}
+
+/* For Chrome, Safari, and Opera (WebKit-based browsers) */
+.hide-scrollbar::-webkit-scrollbar {
+  display: none;
+}

@@ -108,7 +108,7 @@ const Messages = () => {
   return (
     <div
       className={`flex pt-14 h-[calc(100vh-${NAVBAR_HEIGHT})] overflow-hidden
-      ${isDark ? "bg-darkmode text-white" : "bg-lightmode text-black"}`}
+      ${isDark ? "bg-darkmode text-white" : "bg-lightmode text-black relative"}`}
     >
       {/* NAVBAR (ALWAYS VISIBLE) */}
       <Navbar />
@@ -116,6 +116,8 @@ const Messages = () => {
       {/* ================= LEFT PANEL ================= */}
       <aside
         className={`
+          absolute md:relative
+          left-15 md:left-0
           flex flex-col
           w-full md:w-[340px]
           md:ml-16

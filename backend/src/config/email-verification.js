@@ -24,7 +24,7 @@ const SendEmail = async (to, subject, otp) => {
     `;
 
     const info = await transporter.sendMail({
-      from: '"SHOPMART OTP" <leptoptz@gmail.com>',
+      from: `"CONVO OTP" <${process.env.NODEMAILER_EMAIL}>`,
       to,
       subject,
       html: htmlTemplate,

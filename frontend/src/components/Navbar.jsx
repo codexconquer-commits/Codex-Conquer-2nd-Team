@@ -1,21 +1,21 @@
-import React, { useContext } from "react";
-import { AppContext } from "../context/Theme-Context.js";
 import {
+  Bell,
   House,
   MessageCircle,
-  Bell,
-  User,
-  Phone,
   Moon,
+  Phone,
   Sun,
+  User,
 } from "lucide-react";
+import { useContext } from "react";
+import { Link } from "react-router-dom";
+import { AppContext } from "../context/Theme-Context.js";
 
 const Navbar = () => {
   const { isDark, setIsDark } = useContext(AppContext);
 
   return (
     <div className="font-regular w-screen h-screen relative">
-
       {/* 🔝 Top Navbar */}
       <div
         className={`${
@@ -43,29 +43,28 @@ const Navbar = () => {
         }
         fixed top-14 left-0 h-[91%]
         p-4 flex flex-col justify-between
-        rounded-tr-2xl shadow-lg theme-animate`}
+       theme-animate`}
       >
         <aside className="flex flex-col items-center gap-5 ">
-
-          <div className="icon-hover p-2 rounded-xl">
+          <Link to="/" className="icon-hover p-2 rounded-xl">
             <House />
-          </div>
+          </Link>
 
-          <div className="icon-hover p-2 rounded-xl">
+          <Link to="/messages" className="icon-hover p-2 rounded-xl">
             <MessageCircle />
-          </div>
+          </Link>
 
-          <div className="icon-hover p-2 rounded-xl">
+          <Link to="/notifications" className="icon-hover p-2 rounded-xl">
             <Bell />
-          </div>
+          </Link>
 
-          <div className="icon-hover p-2 rounded-xl">
+          <Link to="/calls" className="icon-hover p-2 rounded-xl">
             <Phone />
-          </div>
+          </Link>
 
-          <div className="icon-hover p-2 rounded-xl">
+          <Link to="/profile" className="icon-hover p-2 rounded-xl">
             <User />
-          </div>
+          </Link>
         </aside>
 
         {/* 🌙 Theme Toggle */}

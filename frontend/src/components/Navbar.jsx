@@ -10,7 +10,7 @@ import {
 import { useContext } from "react";
 import { Link } from "react-router-dom";
 import { AppContext } from "../context/Theme-Context.js";
-import Logo from "../assets/download-removebg-preview.png"; // ✅ FIXED
+import Logo from "../assets/download-removebg-preview.png";
 
 const Navbar = () => {
   const { isDark, setIsDark } = useContext(AppContext);

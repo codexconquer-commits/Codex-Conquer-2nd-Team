@@ -103,6 +103,23 @@ export const logOutUser = async (req, res) => {
   } catch (error) {}
 };
 
+
+export const profileUser = async (req, res) => {
+  try {
+    const user = req.user;
+    
+    res.status(200).json({
+      message: "Profile fetched successfully",
+      user: {
+        id: user._id,
+        fullName: user.fullName,
+        email: user.email,
+        contact: user.contact
+      }
+    });
+  } catch (error) {}
+};
+
 export const getAllUsers = async (req, res) => {
   if (!req.user) {
     return res.status(401).json({ message: "Unauthorized" });

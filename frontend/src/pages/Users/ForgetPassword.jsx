@@ -5,7 +5,7 @@ import { toast, ToastContainer } from "react-toastify";
 import { Mail, Lock, Key } from "lucide-react";
 import "react-toastify/dist/ReactToastify.css";
 
-const DEMO_LOGO = "../../../images/download-removebg-preview.png";
+import Logo from "../assets/download-removebg-preview.png";
 
 const ForgetPassword = () => {
   const navigate = useNavigate();
@@ -69,7 +69,7 @@ const ForgetPassword = () => {
       {/* LEFT PANEL (Same as Login) */}
       <div className="hidden md:flex flex-col justify-center items-center bg-gradient-to-br from-blue-700 to-blue-900 text-white p-10">
         <img
-          src={DEMO_LOGO}
+          src={Logo}
           alt="Logo"
           className="w-20 h-20 mb-4 rounded-full bg-white p-2 shadow-lg"
         />
@@ -90,7 +90,7 @@ const ForgetPassword = () => {
 
           {/* Logo */}
           <div className="flex items-center justify-center mb-6">
-            <img src={DEMO_LOGO} alt="Logo" className="w-10 h-10 mr-2" />
+            <img src={Logo} alt="Logo" className="w-10 h-10 mr-2" />
             <span className="text-2xl font-bold text-blue-700">Convo</span>
           </div>
 

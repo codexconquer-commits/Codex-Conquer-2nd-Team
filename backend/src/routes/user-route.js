@@ -9,6 +9,11 @@ router.post("/login", userController.loginUser);
 router.post("/sendOtp", userController.sendOtp);
 router.post("/reset-password", userController.resetPassword);
 router.get("/logOut", userController.logOutUser);
+router.get("/profile", userController.profileUser);
+router.get("/me", authMiddleware, (req, res) => {
+  res.status(200).json(req.user);
+});
+
 router.get("/", authMiddleware, userController.getAllUsers);
 
 

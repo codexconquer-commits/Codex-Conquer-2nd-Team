@@ -6,8 +6,8 @@ import { toast, ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import { AppContext } from "../../context/Theme-Context.js";
 
-// Use your old logo path and details here
-const DEMO_LOGO = "../../../images/download-removebg-preview.png"; // Demo logo
+import Logo from "../assets/download-removebg-preview.png";
+
 
 const SignUp = () => {
   const API_BASE = import.meta.env.VITE_BASE_URL || "";
@@ -64,7 +64,7 @@ const SignUp = () => {
       {/* Left Panel */}
       <div className="hidden md:flex flex-col justify-center items-center bg-gradient-to-br from-blue-700 to-blue-900 text-white p-10">
         <img
-          src={DEMO_LOGO}
+          src={Logo}
           alt="Convo Logo"
           className="w-20 h-20 mb-4 rounded-full bg-white p-2 shadow-lg"
         />
@@ -81,7 +81,7 @@ const SignUp = () => {
       <div className="flex items-center justify-center bg-blue-50">
         <div className="w-full max-w-md bg-white rounded-2xl p-10 shadow-2xl border border-blue-100">
           <div className="flex items-center justify-center mb-6">
-            <img src={DEMO_LOGO} alt="Convo Logo" className="w-10 h-10 mr-2" />
+            <img src={Logo} alt="Convo Logo" className="w-10 h-10 mr-2" />
             <span className="text-2xl font-bold text-blue-700">Convo</span>
           </div>
           <h1 className="text-2xl font-bold text-blue-800 mb-1">

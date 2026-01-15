@@ -1,127 +1,93 @@
-import React, { useEffect, useState } from "react";
 import axios from "axios";
-import socket from "../../socket/socket";
+import { useEffect, useRef, useState } from "react";
+import socket from "../../socket/socket.js";
 
 const BASE = import.meta.env.VITE_BASE_URL;
 
 const Home = () => {
   const [users, setUsers] = useState([]);
-  const [chats, setChats] = useState([]);
+  const [me, setMe] = useState(null);
   const [activeChat, setActiveChat] = useState(null);
   const [messages, setMessages] = useState([]);
   const [text, setText] = useState("");
-  const [myId, setMyId] = useState(null);
 
-  /* ================= GET LOGGED-IN USER ================= */
+  const isTypingRef = useRef(false);
+const [typingUser, setTypingUser] = useState("");
+
+const typingTimeoutRef = useRef(null);
+
+  /* ================= AUTH USER ================= */
   useEffect(() => {
     axios
       .get(`${BASE}/api/users/me`, { withCredentials: true })
       .then((res) => {
-        setMyId(res.data._id);
-        console.log("🧑 Logged in user:", res.data._id);
-      })
-      .catch(() => {
-        console.error("❌ /api/me not working");
+        setMe(res.data);
+        socket.emit("add-user", res.data._id);
+        console.log("🧑 logged in:", res.data.fullName);
       });
   }, []);
 
-  /* ================= SOCKET REGISTER ================= */
+  /* ================= USERS ================= */
   useEffect(() => {
-    if (!myId) return;
-
-    const onConnect = () => {
-      console.log("🟢 Socket connected:", socket.id);
-      socket.emit("add-user", myId);
-      console.log("📌 add-user emitted:", myId);
-    };
-
-    if (socket.connected) onConnect();
-    socket.on("connect", onConnect);
-
-    return () => socket.off("connect", onConnect);
-  }, [myId]);
-
-  /* ================= LOAD USERS ================= */
-  useEffect(() => {
-    axios
-      .get(`${BASE}/api/users`, { withCredentials: true })
-      .then((res) => {
-        console.log("👥 Users loaded");
-        setUsers(res.data);
-      });
+    axios.get(`${BASE}/api/users`, { withCredentials: true }).then((res) => {
+      setUsers(res.data || []);
+    });
   }, []);
 
-  /* ================= LOAD CHATS ================= */
-  const loadChats = () => {
-    axios
-      .get(`${BASE}/api/chats`, { withCredentials: true })
-      .then((res) => {
-        console.log("💬 Chats loaded");
-        setChats(res.data);
-      });
-  };
-
+  /* ================= SOCKET LISTENERS ================= */
   useEffect(() => {
-    loadChats();
-  }, []);
-
-  /* ================= SOCKET RECEIVE ================= */
-  useEffect(() => {
-    const handleReceiveMessage = (msg) => {
-      console.log("📩 Message received:", msg);
-
-      if (!activeChat || msg.chatId !== activeChat._id) {
-        console.log("⚠️ Message ignored (not active chat)");
-        return;
+    socket.on("receive-message", (msg) => {
+      console.log("📩 receive-message", msg);
+      if (activeChat && msg.chatId === activeChat._id) {
+        setMessages((prev) => [...prev, msg]);
       }
+    });
 
-      setMessages((prev) => [...prev, msg]);
+    socket.on("typing", ({ senderName }) => {
+      console.log("👀 typing:", senderName);
+      setTypingUser(senderName + " is typing...");
+    });
+
+    socket.on("stop-typing", () => {
+      console.log("🛑 stop typing");
+      setTypingUser("");
+    });
+
+    return () => {
+      socket.off("receive-message");
+      socket.off("typing");
+      socket.off("stop-typing");
     };
-
-    socket.on("receive-message", handleReceiveMessage);
-    return () => socket.off("receive-message", handleReceiveMessage);
   }, [activeChat]);
 
-  /* ================= OPEN CHAT WITH USER ================= */
-  const openChatWithUser = async (userId) => {
-    console.log("➡️ Opening chat with user:", userId);
-
+  /* ================= OPEN CHAT ================= */
+  const openChat = async (userId) => {
     const res = await axios.post(
       `${BASE}/api/chats`,
       { userId },
       { withCredentials: true }
     );
 
-    loadChats();
-    openChat(res.data);
-  };
-
-  /* ================= OPEN CHAT ================= */
-  const openChat = async (chat) => {
-    console.log("📂 Chat opened:", chat._id);
+    const chat = res.data;
     setActiveChat(chat);
 
-    const res = await axios.get(
-      `${BASE}/api/messages/${chat._id}`,
-      { withCredentials: true }
-    );
+    socket.emit("join-chat", chat._id);
+    console.log("📥 joined chat:", chat._id);
 
-    console.log("📜 Messages loaded:", res.data.length);
-    setMessages(res.data);
+    const msgs = await axios.get(`${BASE}/api/messages/${chat._id}`, {
+      withCredentials: true,
+    });
+
+    setMessages(msgs.data || []);
   };
 
   /* ================= SEND MESSAGE ================= */
   const sendMessage = async () => {
     if (!text || !activeChat) return;
 
-    console.log("✉️ Sending message:", text);
-
     const res = await axios.post(
       `${BASE}/api/messages`,
-      {
-        chatId: activeChat._id,
-        text,
-      },
+      { chatId: activeChat._id, text },
       { withCredentials: true }
     );
 
@@ -129,70 +95,114 @@ const Home = () => {
     setText("");
 
     const receiver = activeChat.members.find(
-      (m) => m._id !== res.data.senderId
+      (m) =>
+        (typeof m === "string" ? m : m._id) !==
+        (typeof res.data.senderId === "string"
+          ? res.data.senderId
+          : res.data.senderId._id)
     );
 
-    console.log("📤 Emitting to receiver:", receiver._id);
+    const receiverId =
+      typeof receiver === "string" ? receiver : receiver?._id;
 
-    socket.emit("send-message", {
-      receiverId: receiver._id,
-      message: res.data,
-    });
+    if (receiverId) {
+      socket.emit("send-message", {
+        receiverId,
+        message: res.data,
+      });
+    }
+
+    socket.emit("stop-typing", { chatId: activeChat._id });
+    isTypingRef.current = false;
   };
 
-  /* ================= UI ================= */
   return (
-    <div style={{ display: "flex", height: "100vh" }}>
-      {/* LEFT */}
-      <div style={{ width: 300, borderRight: "1px solid gray", padding: 10 }}>
-        <h3>All Users</h3>
+    <div style={{ display: "flex", height: "100vh", fontFamily: "sans-serif" }}>
+      {/* USERS */}
+      <div style={{ width: 250, borderRight: "1px solid #ccc" }}>
+        <h3 style={{ padding: 10 }}>Users</h3>
         {users.map((u) => (
           <div
             key={u._id}
-            onClick={() => openChatWithUser(u._id)}
-            style={{ cursor: "pointer", padding: 5 }}
+            onClick={() => openChat(u._id)}
+            style={{
+              padding: 10,
+              cursor: "pointer",
+              background: "#f5f5f5",
+              marginBottom: 4,
+            }}
           >
             {u.fullName}
           </div>
         ))}
-
-        <hr />
-
-        <h3>Chats</h3>
-        {chats.map((chat) => (
-          <div
-            key={chat._id}
-            onClick={() => openChat(chat)}
-            style={{ cursor: "pointer", padding: 5 }}
-          >
-            Chat {chat._id.slice(-4)}
-          </div>
-        ))}
       </div>
 
-      {/* RIGHT */}
+      {/* CHAT */}
       <div style={{ flex: 1, padding: 10 }}>
-        {activeChat ? (
+        {!activeChat ? (
+          <h2>Select a user to chat</h2>
+        ) : (
           <>
-            <h3>Messages</h3>
+            <div style={{ minHeight: 20, color: "gray" }}>
+              {typingUser}
+            </div>
 
-            <div style={{ height: "70vh", overflowY: "auto" }}>
+            <div
+              style={{
+                height: "70vh",
+                overflowY: "auto",
+                border: "1px solid #ddd",
+                padding: 10,
+                marginBottom: 10,
+              }}
+            >
               {messages.map((m) => (
-                <div key={m._id}>
-                  <b>{m.senderId?.fullName || "You"}:</b> {m.text}
+                <div key={m._id} style={{ marginBottom: 6 }}>
+                  <b>
+                    {m.senderId === me?._id ||
+                    m.senderId?._id === me?._id
+                      ? "You"
+                      : "User"}
+                    :
+                  </b>{" "}
+                  {m.text}
                 </div>
               ))}
             </div>
 
-            <input
+            <textarea
               value={text}
-              onChange={(e) => setText(e.target.value)}
-              placeholder="Type message"
+              placeholder="Type message..."
+              style={{ width: "100%", height: 60 }}
+              onChange={(e) => {
+                setText(e.target.value);
+
+                if (!activeChat) return;
+
+                if (!isTypingRef.current) {
+                  socket.emit("typing", {
+                    chatId: activeChat._id,
+                    senderName: me.fullName,
+                  });
+                  console.log("⌨️ typing emit");
+                  isTypingRef.current = true;
+                }
+
+                clearTimeout(typingTimeoutRef.current);
+                typingTimeoutRef.current = setTimeout(() => {
+                  socket.emit("stop-typing", {
+                    chatId: activeChat._id,
+                  });
+                  console.log("🛑 stop typing emit");
+                  isTypingRef.current = false;
+                }, 2000);
+              }}
             />
-            <button onClick={sendMessage}>Send</button>
+
+            <button onClick={sendMessage} style={{ marginTop: 8 }}>
+              Send
+            </button>
           </>
-        ) : (
-          <h3>Select user or chat</h3>
         )}
       </div>
     </div>

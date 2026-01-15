@@ -1,5 +1,13 @@
 import axios from "axios";
-import { ArrowLeft, Mic, Plus, Send, Settings,Phone,Video } from "lucide-react";
+import {
+  ArrowLeft,
+  Mic,
+  Phone,
+  Plus,
+  Send,
+  Settings,
+  Video,
+} from "lucide-react";
 import { useContext, useEffect, useRef, useState } from "react";
 import Navbar from "../../components/Navbar";
 import { AppContext } from "../../context/Theme-Context.js";
@@ -8,7 +16,6 @@ import socket from "../../socket/socket";
 const BASE = import.meta.env.VITE_BASE_URL;
 
 const Messages = () => {
-  // Context and state hooks
   const { isDark, user } = useContext(AppContext);
 
   const [users, setUsers] = useState([]);
@@ -18,48 +25,39 @@ const Messages = () => {
   const [messages, setMessages] = useState([]);
   const [text, setText] = useState("");
   const [showChatMobile, setShowChatMobile] = useState(false);
-  const [me, setMe] = useState(null); // Add this line
+  const [me, setMe] = useState(null);
+  const [onlineUsers, setOnlineUsers] = useState([]);
 
   const isTypingRef = useRef(false);
   const [typingUser, setTypingUser] = useState("");
-
   const typingTimeoutRef = useRef(null);
-
-  // Ref for auto-scroll
   const messagesEndRef = useRef(null);
 
-  /* ================= AUTH USER ================= */
   useEffect(() => {
     axios.get(`${BASE}/api/users/me`, { withCredentials: true }).then((res) => {
       setMe(res.data);
       socket.emit("add-user", res.data._id);
-      console.log("🧑 logged in:", res.data.fullName);
     });
   }, []);
 
-  /* ================= USERS ================= */
   useEffect(() => {
     axios.get(`${BASE}/api/users`, { withCredentials: true }).then((res) => {
       setUsers(res.data || []);
     });
   }, []);
 
-  /* ================= SOCKET LISTENERS ================= */
   useEffect(() => {
     socket.on("receive-message", (msg) => {
-      console.log("📩 receive-message", msg);
       if (activeChat && msg.chatId === activeChat._id) {
         setMessages((prev) => [...prev, msg]);
       }
     });
 
     socket.on("typing", ({ senderName }) => {
-      console.log("👀 typing:", senderName);
       setTypingUser(senderName + " is typing...");
     });
 
     socket.on("stop-typing", () => {
-      console.log("🛑 stop typing");
       setTypingUser("");
     });
 
@@ -70,61 +68,55 @@ const Messages = () => {
     };
   }, [activeChat]);
 
-  /* ================= OPEN CHAT ================= */
+  useEffect(() => {
+    const handleOnlineUsers = (users) => {
+      setOnlineUsers([...users]);
+    };
+    socket.on("online-users", handleOnlineUsers);
+    return () => {
+      socket.off("online-users", handleOnlineUsers);
+    };
+  }, []);
+
   const openChat = async (userId) => {
     const res = await axios.post(
       `${BASE}/api/chats`,
       { userId },
       { withCredentials: true }
     );
-
     const chat = res.data;
     setActiveChat(chat);
-
     socket.emit("join-chat", chat._id);
-    console.log("📥 joined chat:", chat._id);
-
     const msgs = await axios.get(`${BASE}/api/messages/${chat._id}`, {
       withCredentials: true,
     });
-
     setMessages(msgs.data || []);
   };
 
-  /* ================= OPEN CHAT WITH USER ================= */
   const openChatWithUser = async (userId) => {
-    // Open or create chat with selected user
     const res = await axios.post(
       `${BASE}/api/chats`,
       { userId },
       { withCredentials: true }
     );
-
     const chat = res.data;
     setActiveChat(chat);
-
     socket.emit("join-chat", chat._id);
-
     const msgs = await axios.get(`${BASE}/api/messages/${chat._id}`, {
       withCredentials: true,
     });
-
     setMessages(msgs.data || []);
   };
 
-  /* ================= SEND MESSAGE ================= */
   const sendMessage = async () => {
     if (!text || !activeChat) return;
-
     const res = await axios.post(
       `${BASE}/api/messages`,
       { chatId: activeChat._id, text },
       { withCredentials: true }
     );
-
     setMessages((prev) => [...prev, res.data]);
     setText("");
-
     const receiver = activeChat.members.find(
       (m) =>
         (typeof m === "string" ? m : m._id) !==
@@ -132,21 +124,17 @@ const Messages = () => {
           ? res.data.senderId
           : res.data.senderId._id)
     );
-
     const receiverId = typeof receiver === "string" ? receiver : receiver?._id;
-
     if (receiverId) {
       socket.emit("send-message", {
         receiverId,
         message: res.data,
       });
     }
-
     socket.emit("stop-typing", { chatId: activeChat._id });
     isTypingRef.current = false;
   };
 
-  // Responsive: detect mobile screen
   const [isMobile, setIsMobile] = useState(window.innerWidth <= 768);
   useEffect(() => {
     const handleResize = () => setIsMobile(window.innerWidth <= 768);
@@ -154,29 +142,32 @@ const Messages = () => {
     return () => window.removeEventListener("resize", handleResize);
   }, []);
 
-  // Auto-scroll to bottom when messages change
   useEffect(() => {
     if (messagesEndRef.current) {
       messagesEndRef.current.scrollIntoView({ behavior: "smooth" });
     }
   }, [messages]);
 
-  // Keyboard behavior for textarea
   const handleTextareaKeyDown = (e) => {
     if (e.key === "Enter" && !e.shiftKey) {
       e.preventDefault();
       if (text.trim()) sendMessage();
     }
   };
-
+const isActiveUserOnline = onlineUsers.includes(
+  activeChat?.members?.find(m => m._id !== me?._id)?._id?.toString()
+);
   return (
     <div
-      className={`flex pt-14 h-[95vh] overflow-hidden
+      className={`flex  h-screen overflow-hidden
       ${
         isDark ? "bg-darkmode text-white" : "bg-lightmode text-black relative"
       }`}
     >
+
+
       <Navbar />
+
 
       {/* LEFT PANEL */}
       <aside
@@ -218,26 +209,37 @@ const Messages = () => {
         </div>
 
         {/* User list */}
-        <div className="flex-1 overflow-y-auto px-2 space-y-2 pb-4">
-          {users.map((u) => (
-            <div
-              key={u._id}
-              onClick={() => {
-                openChatWithUser(u._id);
-                if (isMobile) setShowChatMobile(true);
-              }}
-              className="flex items-center gap-3 px-4 py-3 rounded-xl cursor-pointer
-              bg-white/10 hover:bg-white/20"
-            >
-              <div className="w-10 h-10 rounded-full bg-blue-500 text-white flex items-center justify-center font-bold">
-                {u?.fullName?.[0]}
+        <div className="flex-1 overflow-y-auto hide-scrollbar px-2 space-y-2 pb-4">
+          {users.map((u) => {
+            const isOnline = onlineUsers.includes(u._id?.toString());
+            return (
+              <div
+                key={u._id}
+                onClick={() => {
+                  openChatWithUser(u._id);
+                  if (isMobile) setShowChatMobile(true);
+                }}
+                className="flex items-center gap-3 px-4 py-3 rounded-xl cursor-pointer
+                bg-white/10 hover:bg-white/20"
+              >
+                <div className="relative w-10 h-10">
+                  <div className="w-10 h-10 rounded-full bg-blue-500 text-white flex items-center justify-center font-bold">
+                    {u?.fullName?.[0]}
+                  </div>
+                  {/* Status dot */}
+                  <span
+                    className={`absolute bottom-0 right-0 w-3 h-3 rounded-full border-2 border-white
+                      ${isOnline ? "bg-yellow-500" : "bg-gray-400"}`}
+                    title={isOnline ? "Online" : "Offline"}
+                  />
+                </div>
+                <div className="flex-1 truncate">
+                  <p className="font-semibold truncate">{u.fullName}</p>
+                  <p className="text-xs opacity-70 truncate">Tap to chat</p>
+                </div>
               </div>
-              <div className="flex-1 truncate">
-                <p className="font-semibold truncate">{u.fullName}</p>
-                <p className="text-xs opacity-70 truncate">Tap to chat</p>
-              </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
       </aside>
 
@@ -263,41 +265,40 @@ const Messages = () => {
           <>
             {/* Chat header */}
             <div
-              className={`sticky top-0 z-10 backdrop-blur-xl
-              flex items-center gap-3 px-4 py-3 border-b border-white/10
+              className={` sticky top-0 h-14  z-20 backdrop-blur-xl
+              flex items-center gap-3 px-4 py-3 border-b  border-white/10
               ${isMobile && showChatMobile ? "bg-inherit" : ""}`}
             >
-              {isMobile && showChatMobile && (
+
                 <div className="flex  items-center justify-between w-full">
+                  <button
+                    className="flex gap-2 p-2 rounded-xl bg-white/10"
+                    onClick={() => setShowChatMobile(false)}
+                  >
+                    <ArrowLeft />
+                  </button>
+                  <div className="flex items-center gap-2  ml-4">
+                    <h2 className="ml-2 font-medium text-xl ">
+                    {activeChat.members
+                      .map((m) =>
+                        m._id === me?._id ? null : m.fullName || "Unknown User"
+                      )
+                      .filter(Boolean)
+                      .join(", ")}
+                  </h2>
+                  <p className="text-[8px]">{isActiveUserOnline ? "🟢" : "⚫️"}</p>
+                  </div>
 
-
-                <button
-                  className="flex gap-2 p-2 rounded-xl bg-white/10"
-                  onClick={() => setShowChatMobile(false)}
-                >
-                  <ArrowLeft />
-                </button>
-                <h2 className="ml-2 font-medium text-xl ">
-                  {activeChat.members
-                    .map((m) =>
-                      m._id === me?._id ? null : m.fullName || "Unknown User"
-                    )
-                    .filter(Boolean)
-                    .join(", ")}
-                </h2>
-                <div className="flex gap-4 ml-auto">
-                  <Phone />
-                  <Video />
+                  <div className="flex gap-4 ml-auto">
+                    <Phone />
+                    <Video />
+                  </div>
                 </div>
-                </div>
 
-
-
-              )}
             </div>
 
             {/* Messages list */}
-            <div className="flex-1 overflow-y-auto px-4 py-3 space-y-3 pb-24">
+            <div className="flex-1 overflow-y-auto hide-scrollbar px-4 py-3 space-y-3 pb-24">
               {messages.map((m, idx) => {
                 // Sender detection (string or object)
                 const myIdVal = me?._id || user?._id;
@@ -350,13 +351,19 @@ const Messages = () => {
             </div>
 
             {/* Message input */}
-            <div className={`${isDark ? "bg-gray-800" : "bg-[#f3f3f3]"} p-3 rounded-2xl`}>
+            <div
+              className={`${
+                isDark ? "bg-gray-800" : "bg-[#f3f3f3]"
+              } p-3 rounded-2xl`}
+            >
               <div className="flex items-center gap-2">
                 <textarea
                   value={text}
                   rows={1}
                   placeholder="Type a message..."
-                  className={`${isDark ? "bg-gray-800 text-white" : "bg-white text-black"} flex-1 resize-none px-4 py-2 rounded-full outline-none`}
+                  className={`${
+                    isDark ? "bg-gray-800 text-white" : "bg-white text-black"
+                  } flex-1 resize-none px-4 py-2 rounded-full outline-none`}
                   onChange={(e) => {
                     setText(e.target.value);
 

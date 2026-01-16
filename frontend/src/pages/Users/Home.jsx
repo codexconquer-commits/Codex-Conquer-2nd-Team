@@ -1,6 +1,8 @@
 import axios from "axios";
 import { useEffect, useRef, useState } from "react";
 import socket from "../../socket/socket.js";
+import Navbar from "../../components/Navbar";
+
 
 const BASE = import.meta.env.VITE_BASE_URL;
 
@@ -118,6 +120,7 @@ const typingTimeoutRef = useRef(null);
 
   return (
     <div style={{ display: "flex", height: "100vh", fontFamily: "sans-serif" }}>
+      <Navbar />
       {/* USERS */}
       <div style={{ width: 250, borderRight: "1px solid #ccc" }}>
         <h3 style={{ padding: 10 }}>Users</h3>

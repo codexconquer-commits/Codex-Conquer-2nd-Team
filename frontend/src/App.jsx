@@ -10,27 +10,35 @@ import SignUp from "./pages/Users/SignUp.jsx";
 import Messages from "./pages/Users/messages/Messages.jsx";
 import Calls from "./pages/Users/Calling.jsx";
 import Profile from "./pages/Users/Profile.jsx";
-import Notifications from "./pages/Users/Notification.jsx"; // ✅ FIX
+import Notifications from "./pages/Users/Notification.jsx";
 
 const App = () => {
   const [isDark, setIsDark] = useState(false);
 
   return (
-    <Router>
-      <AppContext.Provider value={{ isDark, setIsDark }}>
-        <Routes>
-          <Route path="/" element={<Home />} />
-          <Route path="/login" element={<Login />} />
-          <Route path="/signup" element={<SignUp />} />
-          <Route path="/forgetPassword" element={<ForgetPassword />} />
+    <AppContext.Provider value={{ isDark, setIsDark }}>
+      {/* 🔥 THEME APPLIED HERE */}
+      <div
+        className={`
+          min-h-screen w-full
+          ${isDark ? "bg-darkmode text-lightmode" : "bg-lightmode text-darkmode"}
+        `}
+      >
+        <Router>
+          <Routes>
+            <Route path="/" element={<Home />} />
+            <Route path="/login" element={<Login />} />
+            <Route path="/signup" element={<SignUp />} />
+            <Route path="/forgetPassword" element={<ForgetPassword />} />
 
-          <Route path="/messages" element={<Messages />} />
-          <Route path="/notifications" element={<Notifications />} />
-          <Route path="/calls" element={<Calls />} />
-          <Route path="/profile" element={<Profile />} />
-        </Routes>
-      </AppContext.Provider>
-    </Router>
+            <Route path="/messages" element={<Messages />} />
+            <Route path="/notifications" element={<Notifications />} />
+            <Route path="/calls" element={<Calls />} />
+            <Route path="/profile" element={<Profile />} />
+          </Routes>
+        </Router>
+      </div>
+    </AppContext.Provider>
   );
 };
 

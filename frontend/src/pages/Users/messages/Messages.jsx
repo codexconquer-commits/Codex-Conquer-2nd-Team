@@ -111,7 +111,7 @@ const Messages = () => {
 
   return (
     <div
-      className={`flex h-screen overflow-hidden ml-18 ${
+      className={`flex h-screen overflow-hidden ml-18 border-x-2 border-amber-50 ${
         isDark ? "bg-darkmode text-white" : "bg-lightmode text-black"
       }`}
     >
@@ -127,6 +127,7 @@ const Messages = () => {
         setShowChatMobile={setShowChatMobile}
         isDark={isDark}
         showChatMobile={showChatMobile}
+        activeChat={activeChat}
       />
 
       {/* RIGHT CHAT */}
@@ -142,7 +143,7 @@ const Messages = () => {
   {/* App Icon */}
   <div className="w-28 h-28 mb-6 rounded-3xl bg-gradient-to-tr from-blue-500 via-purple-500 to-pink-500 flex items-center justify-center shadow-xl">
     <img src={Logo} alt="App Logo" className="w-16 h-16 rounded-full" />
-    
+
   </div>
 
   {/* Title */}

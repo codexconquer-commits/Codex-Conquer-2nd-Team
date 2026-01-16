@@ -5,7 +5,7 @@ import { toast, ToastContainer } from "react-toastify";
 import { Mail, Lock, Key } from "lucide-react";
 import "react-toastify/dist/ReactToastify.css";
 
-import Logo from "../assets/download-removebg-preview.png";
+import Logo from "../../assets/download-removebg-preview.png";
 
 const ForgetPassword = () => {
   const navigate = useNavigate();

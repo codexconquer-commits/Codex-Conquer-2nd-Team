@@ -6,6 +6,7 @@ const socketHandler = (io) => {
       if (!userId) return;
       onlineUsers.set(userId.toString(), socket.id);
       io.emit("online-users", Array.from(onlineUsers.keys()));
+      console.log("Online Users:");
     });
 
     socket.on("join-chat", (chatId) => {
@@ -30,6 +31,7 @@ const socketHandler = (io) => {
     socket.on("disconnect", () => {
       for (const [userId, socketId] of onlineUsers.entries()) {
         if (socketId === socket.id) {
+          console.log("User Offline:");
           onlineUsers.delete(userId);
           io.emit("online-users", Array.from(onlineUsers.keys()));
           break;

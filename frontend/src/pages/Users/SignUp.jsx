@@ -6,7 +6,7 @@ import { toast, ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import { AppContext } from "../../context/Theme-Context.js";
 
-import Logo from "../assets/download-removebg-preview.png";
+import Logo from "../../assets/download-removebg-preview.png";
 
 
 const SignUp = () => {

@@ -6,7 +6,7 @@ import { toast, ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import { AppContext } from "../../context/Theme-Context.js";
 
-import Logo from "../assets/download-removebg-preview.png";
+import Logo from "../../assets/download-removebg-preview.png";
 
 
 const Login = () => {
@@ -35,10 +35,14 @@ const Login = () => {
           password: formData.password,
         },
         {
-          headers: { "Content-Type": "application/json" },
-          withCredentials: true,
+          headers: {
+            "Content-Type": "application/json",
+          },
+          withCredentials: true, // ✅ important if backend sets cookies
+
         }
       );
+      localStorage.setItem("token", res.data.token);
 
       toast.success("Login successful 🎉");
       setTimeout(() => {

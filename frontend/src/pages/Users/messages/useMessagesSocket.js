@@ -1,5 +1,5 @@
 import { useEffect } from "react";
-import socket from "../../../socket/socket.js";
+import socket from "../../../socket/socket";
 
 const useMessagesSocket = ({
   activeChat,
@@ -8,14 +8,14 @@ const useMessagesSocket = ({
   setOnlineUsers,
 }) => {
   useEffect(() => {
-    socket.on("receive-message", (msg) => {
-      if (activeChat && msg.chatId === activeChat._id) {
-        setMessages((prev) => [...prev, msg]);
+    socket.on("receive-message", (message) => {
+      if (message.chatId === activeChat?._id) {
+        setMessages((prev) => [...prev, message]);
       }
     });
 
     socket.on("typing", ({ senderName }) => {
-      setTypingUser(senderName + " is typing...");
+      setTypingUser(senderName);
     });
 
     socket.on("stop-typing", () => {

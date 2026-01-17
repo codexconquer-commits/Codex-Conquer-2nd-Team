@@ -10,7 +10,7 @@ import SignUp from "./pages/Users/SignUp.jsx";
 import Messages from "./pages/Users/messages/Messages.jsx";
 import Calls from "./pages/Users/Calling.jsx";
 import Profile from "./pages/Users/Profile.jsx";
-import Notifications from "./pages/Users/Notification.jsx";
+import GroupsMessages from "./pages/Users/groupsMessages/GroupsMessages.jsx";
 
 const App = () => {
   const [isDark, setIsDark] = useState(false);
@@ -32,7 +32,7 @@ const App = () => {
             <Route path="/forgetPassword" element={<ForgetPassword />} />
 
             <Route path="/messages" element={<Messages />} />
-            <Route path="/notifications" element={<Notifications />} />
+            <Route path="/groups" element={<GroupsMessages/>} />
             <Route path="/calls" element={<Calls />} />
             <Route path="/profile" element={<Profile />} />
           </Routes>

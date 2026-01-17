@@ -1,5 +1,5 @@
 import {
-  Bell,
+  UsersRound,
   House,
   MessageCircle,
   Moon,
@@ -58,8 +58,8 @@ const Navbar = () => {
             <MessageCircle />
           </NavLink>
 
-          <NavLink to="/notifications" className={navClass}>
-            <Bell />
+          <NavLink to="/groups" className={navClass}>
+            <UsersRound />
           </NavLink>
 
           <NavLink to="/calls" className={navClass}>

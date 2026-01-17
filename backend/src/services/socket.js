@@ -2,24 +2,32 @@ const onlineUsers = new Map();
 
 const socketHandler = (io) => {
   io.on("connection", (socket) => {
+
+    // 🔹 User comes online
     socket.on("add-user", (userId) => {
       if (!userId) return;
+
       onlineUsers.set(userId.toString(), socket.id);
+
+      // sabko updated online users bhejo
       io.emit("online-users", Array.from(onlineUsers.keys()));
-      console.log("Online Users:");
     });
 
+    // 🔹 Join chat room (1-to-1 OR Group)
     socket.on("join-chat", (chatId) => {
+      if (!chatId) return;
       socket.join(chatId);
     });
 
-    socket.on("send-message", ({ receiverId, message }) => {
-      const receiverSocketId = onlineUsers.get(receiverId?.toString());
-      if (receiverSocketId) {
-        io.to(receiverSocketId).emit("receive-message", message);
-      }
+    // 🔥 SEND MESSAGE (WORKS FOR BOTH GROUP & 1-TO-1)
+    socket.on("send-message", ({ chatId, message }) => {
+      if (!chatId || !message) return;
+
+      // sender ke alawa sabko message mile
+      socket.to(chatId).emit("receive-message", message);
     });
 
+    // 🔹 Typing indicator
     socket.on("typing", ({ chatId, senderName }) => {
       socket.to(chatId).emit("typing", { senderName });
     });
@@ -28,10 +36,10 @@ const socketHandler = (io) => {
       socket.to(chatId).emit("stop-typing");
     });
 
+    // 🔹 User disconnect
     socket.on("disconnect", () => {
       for (const [userId, socketId] of onlineUsers.entries()) {
         if (socketId === socket.id) {
-          console.log("User Offline:");
           onlineUsers.delete(userId);
           io.emit("online-users", Array.from(onlineUsers.keys()));
           break;

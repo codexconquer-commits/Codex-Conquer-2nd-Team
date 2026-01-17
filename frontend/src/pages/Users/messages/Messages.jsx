@@ -34,7 +34,7 @@ const Messages = () => {
   useEffect(() => {
     axios.get(`${BASE}/api/users/me`, { withCredentials: true }).then((res) => {
       setMe(res.data);
-      socket.emit("add-user", res.data._id);
+      socket.emit("add-user", res.data._id); // ✅ online user
     });
   }, []);
 
@@ -65,6 +65,8 @@ const Messages = () => {
     return () => window.removeEventListener("resize", resize);
   }, []);
 
+  /* ================= OPEN CHAT ================= */
+
   const openChatWithUser = async (userId) => {
     const res = await axios.post(
       `${BASE}/api/chats`,
@@ -73,6 +75,8 @@ const Messages = () => {
     );
 
     setActiveChat(res.data);
+
+    // ✅ JOIN ROOM (important for group & private)
     socket.emit("join-chat", res.data._id);
 
     const msgs = await axios.get(`${BASE}/api/messages/${res.data._id}`, {
@@ -83,6 +87,8 @@ const Messages = () => {
     if (isMobile) setShowChatMobile(true);
   };
 
+  /* ================= SEND MESSAGE ================= */
+
   const sendMessage = async () => {
     if (!text.trim() || !activeChat) return;
 
@@ -92,19 +98,13 @@ const Messages = () => {
       { withCredentials: true }
     );
 
+    // ✅ Local update
     setMessages((prev) => [...prev, res.data]);
     setText("");
 
-    const receiver = activeChat.members.find(
-      (m) =>
-        (typeof m === "string" ? m : m._id) !==
-        (typeof res.data.senderId === "string"
-          ? res.data.senderId
-          : res.data.senderId._id)
-    );
-
+    // 🔥 SOCKET EMIT (WORKS FOR GROUP + 1-to-1)
     socket.emit("send-message", {
-      receiverId: typeof receiver === "string" ? receiver : receiver?._id,
+      chatId: activeChat._id,
       message: res.data,
     });
   };
@@ -115,10 +115,8 @@ const Messages = () => {
         isDark ? "bg-darkmode text-white" : "bg-lightmode text-black"
       }`}
     >
-      {/* ✅ Navbar hidden when mobile chat open */}
       {!(isMobile && showChatMobile) && <Navbar />}
 
-      {/* LEFT SIDEBAR */}
       <ChatSidebar
         users={users}
         onlineUsers={onlineUsers}
@@ -130,7 +128,6 @@ const Messages = () => {
         activeChat={activeChat}
       />
 
-      {/* RIGHT CHAT */}
       <main
         className={
           isMobile && showChatMobile
@@ -140,28 +137,23 @@ const Messages = () => {
       >
         {!activeChat ? (
           <div className="flex-1 flex flex-col items-center justify-center text-center px-4">
-  {/* App Icon */}
-  <div className="w-28 h-28 mb-6 rounded-3xl bg-gradient-to-tr from-blue-500 via-purple-500 to-pink-500 flex items-center justify-center shadow-xl">
-    <img src={Logo} alt="App Logo" className="w-16 h-16 rounded-full" />
+            <div className="w-28 h-28 mb-6 rounded-3xl bg-gradient-to-tr from-blue-500 via-purple-500 to-pink-500 flex items-center justify-center shadow-xl">
+              <img src={Logo} alt="App Logo" className="w-16 h-16 rounded-full" />
+            </div>
 
-  </div>
+            <h1 className="text-3xl font-extrabold tracking-tight">
+              Convo for Desktop
+            </h1>
 
-  {/* Title */}
-  <h1 className="text-3xl font-extrabold tracking-tight">
-    Convo for Desktop
-  </h1>
+            <p className="opacity-70 max-w-md mt-3 text-sm sm:text-base">
+              Send and receive messages without relying on your phone connection.
+            </p>
 
-  {/* Subtitle */}
-  <p className="opacity-70 max-w-md mt-3 text-sm sm:text-base">
-    Send and receive messages without relying on your phone connection.
-  </p>
-
-  {/* Footer note */}
-  <div className="flex items-center gap-2 mt-10 text-xs opacity-60">
-    <span className="text-lg">🔒</span>
-    <span>Your personal messages are end-to-end encrypted</span>
-  </div>
-</div>
+            <div className="flex items-center gap-2 mt-10 text-xs opacity-60">
+              <span className="text-lg">🔒</span>
+              <span>Your personal messages are end-to-end encrypted</span>
+            </div>
+          </div>
         ) : (
           <>
             <ChatHeader
@@ -170,9 +162,9 @@ const Messages = () => {
               onlineUsers={onlineUsers}
               isMobile={isMobile}
               onBack={() => {
-  setShowChatMobile(false);
-  setActiveChat(null);
-}}
+                setShowChatMobile(false);
+                setActiveChat(null);
+              }}
             />
 
             <ChatMessages

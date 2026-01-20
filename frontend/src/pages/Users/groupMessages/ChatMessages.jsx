@@ -40,7 +40,7 @@ const ChatMessages = ({
 
       {typingUser && (
         <span className="text-xs text-gray-500 italic">
-          {typingUser}
+          {typingUser} is Typing...
         </span>
       )}
 

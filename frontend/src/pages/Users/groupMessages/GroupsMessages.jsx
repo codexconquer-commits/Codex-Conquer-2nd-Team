@@ -29,19 +29,29 @@ const GroupsMessages = () => {
 
   const messagesEndRef = useRef(null);
 
-  /* ================= API ================= */
+  /* ================= USER ================= */
 
   useEffect(() => {
-    axios.get(`${BASE}/api/users/me`, { withCredentials: true }).then((res) => {
+    const loadMe = async () => {
+      const res = await axios.get(`${BASE}/api/users/me`, {
+        withCredentials: true,
+      });
       setMe(res.data);
-      socket.emit("add-user", res.data._id); // ✅ online user
-    });
+      socket.emit("add-user", res.data._id);
+    };
+    loadMe();
   }, []);
 
+  /* ================= GROUPS ================= */
+
   useEffect(() => {
-    axios.get(`${BASE}/api/groups/myGroups`, { withCredentials: true }).then((res) => {
+    const loadGroups = async () => {
+      const res = await axios.get(`${BASE}/api/groups/myGroups`, {
+        withCredentials: true,
+      });
       setGroups(res.data || []);
-    });
+    };
+    loadGroups();
   }, []);
 
   /* ================= SOCKET ================= */
@@ -65,25 +75,24 @@ const GroupsMessages = () => {
     return () => window.removeEventListener("resize", resize);
   }, []);
 
-  /* ================= OPEN CHAT ================= */
+  /* ================= OPEN GROUP CHAT ================= */
 
-  const openChatWithUser = async (userId) => {
-    const res = await axios.post(
-      `${BASE}/api/chats`,
-      { userId },
-      { withCredentials: true }
-    );
+  const openGroupChat = async (groupId) => {
+    const group = groups.find((g) => g._id === groupId);
+    if (!group) return;
 
-    setActiveChat(res.data);
+    setActiveChat(group);
 
-    // ✅ JOIN ROOM (important for group & private)
-    socket.emit("join-chat", res.data._id);
+    // 🔌 join socket room
+    socket.emit("join-chat", groupId);
 
-    const msgs = await axios.get(`${BASE}/api/messages/${res.data._id}`, {
+    // 📩 fetch messages
+    const res = await axios.get(`${BASE}/api/messages/${groupId}`, {
       withCredentials: true,
     });
 
-    setMessages(msgs.data || []);
+    setMessages(res.data || []);
+
     if (isMobile) setShowChatMobile(true);
   };
 
@@ -94,24 +103,27 @@ const GroupsMessages = () => {
 
     const res = await axios.post(
       `${BASE}/api/messages`,
-      { chatId: activeChat._id, text },
+      {
+        chatId: activeChat._id,
+        text,
+      },
       { withCredentials: true }
     );
 
-    // ✅ Local update
     setMessages((prev) => [...prev, res.data]);
     setText("");
 
-    // 🔥 SOCKET EMIT (WORKS FOR GROUP + 1-to-1)
     socket.emit("send-message", {
       chatId: activeChat._id,
       message: res.data,
     });
   };
 
+  /* ================= UI ================= */
+
   return (
     <div
-      className={`flex h-screen overflow-hidden ml-18 border-x-2 border-amber-50 ${
+      className={`flex h-screen overflow-hidden ml-18 ${
         isDark ? "bg-darkmode text-white" : "bg-lightmode text-black"
       }`}
     >
@@ -119,20 +131,18 @@ const GroupsMessages = () => {
 
       <ChatSidebar
         groups={groups}
-        onlineUsers={onlineUsers}
-        onUserClick={openChatWithUser}
+        onUserClick={openGroupChat} 
         isMobile={isMobile}
         setShowChatMobile={setShowChatMobile}
         isDark={isDark}
-        showChatMobile={showChatMobile}
         activeChat={activeChat}
       />
 
       <main
         className={
           isMobile && showChatMobile
-            ? "fixed top-0 left-0 w-screen h-screen z-40 bg-inherit flex flex-col"
-            : "relative flex-1 flex flex-col h-full"
+            ? "fixed inset-0 z-40 bg-inherit flex flex-col"
+            : "relative flex-1 flex flex-col"
         }
       >
         {!activeChat ? (
@@ -141,25 +151,16 @@ const GroupsMessages = () => {
               <img src={Logo} alt="App Logo" className="w-16 h-16 rounded-full" />
             </div>
 
-            <h1 className="text-3xl font-extrabold tracking-tight">
-              Convo for Desktop
-            </h1>
-
-            <p className="opacity-70 max-w-md mt-3 text-sm sm:text-base">
-              Send and receive messages without relying on your phone connection.
+            <h1 className="text-3xl font-extrabold">Convo for Desktop</h1>
+            <p className="opacity-70 max-w-md mt-3">
+              Send and receive messages securely.
             </p>
-
-            <div className="flex items-center gap-2 mt-10 text-xs opacity-60">
-              <span className="text-lg">🔒</span>
-              <span>Your personal messages are end-to-end encrypted</span>
-            </div>
           </div>
         ) : (
           <>
             <ChatHeader
               activeChat={activeChat}
               me={me}
-              onlineUsers={onlineUsers}
               isMobile={isMobile}
               onBack={() => {
                 setShowChatMobile(false);
@@ -170,7 +171,6 @@ const GroupsMessages = () => {
             <ChatMessages
               messages={messages}
               me={me}
-              user={user}
               typingUser={typingUser}
               messagesEndRef={messagesEndRef}
             />

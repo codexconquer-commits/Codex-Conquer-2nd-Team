@@ -10,7 +10,7 @@ import SignUp from "./pages/Users/SignUp.jsx";
 import Messages from "./pages/Users/messages/Messages.jsx";
 import Calls from "./pages/Users/Calling.jsx";
 import Profile from "./pages/Users/Profile.jsx";
-import GroupsMessages from "./pages/Users/groupsMessages/GroupsMessages.jsx";
+import GroupsMessages from "./pages/Users/groupMessages/GroupsMessages.jsx";
 
 const App = () => {
   const [isDark, setIsDark] = useState(false);

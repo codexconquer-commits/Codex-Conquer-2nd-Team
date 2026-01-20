@@ -12,7 +12,7 @@ const ChatHeader = ({
     activeChat.groupAdmin?.toString() === me?._id?.toString();
 
   return (
-    <div className="sticky top-0 z-50 h-14 backdrop-blur-xl flex items-center px-4 border-b border-white/10">
+    <div className="sticky top-0 z-50 h-14 font-regular backdrop-blur-xl flex items-center px-4 border-b border-white/10">
       <div className="flex items-center w-full gap-3">
         {/* Back button (mobile) */}
         {isMobile && (
@@ -38,7 +38,7 @@ const ChatHeader = ({
           <p className="text-xs opacity-70 truncate">
             {activeChat.members.length} members
             {isAdmin && (
-              <span className="ml-2 text-yellow-400 font-semibold">
+              <span className="ml-2 text-blue-600 font-regular text-sm">
                 • Admin
               </span>
             )}

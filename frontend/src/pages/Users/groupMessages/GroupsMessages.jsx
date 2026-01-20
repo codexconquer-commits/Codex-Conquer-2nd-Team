@@ -123,7 +123,7 @@ const GroupsMessages = () => {
 
   return (
     <div
-      className={`flex h-screen overflow-hidden ml-18 ${
+      className={`flex h-screen font-regular overflow-hidden ml-18 ${
         isDark ? "bg-darkmode text-white" : "bg-lightmode text-black"
       }`}
     >
@@ -131,11 +131,12 @@ const GroupsMessages = () => {
 
       <ChatSidebar
         groups={groups}
-        onUserClick={openGroupChat} 
+        onUserClick={openGroupChat}
         isMobile={isMobile}
         setShowChatMobile={setShowChatMobile}
         isDark={isDark}
         activeChat={activeChat}
+        setAddPeople={() => {}}
       />
 
       <main

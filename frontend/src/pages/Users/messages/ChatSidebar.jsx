@@ -1,112 +1,174 @@
-import { Mic, Plus, Settings } from "lucide-react";
+import { Mic, X } from "lucide-react";
+import { useState } from "react";
 
 const ChatSidebar = ({
   users = [],
   onlineUsers = [],
   onUserClick,
-  isMobile,
+  isMobile = false,
   setShowChatMobile,
-  isDark,
-  activeChat
+  isDark = false,
+  activeChat,
 }) => {
+  const [searchQuery, setSearchQuery] = useState("");
+
+  const filteredUsers = users.filter(
+    (u) =>
+      u.fullName?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      u.email?.toLowerCase().includes(searchQuery.toLowerCase())
+  );
+
+  const handleUserClick = (userId) => {
+    onUserClick(userId);
+    if (isMobile) setShowChatMobile(true);
+  };
 
   return (
     <aside
       className={`
-        ${isMobile ? "absolute left-0 top-0 z-20" : "relative"}
-        flex flex-col
-        w-full md:w-[340px]
-        h-full
-        border-r border-white/10
-        backdrop-blur-xl
-        ${isDark ? "bg-darkmode" : "bg-lightmode"}
+        ${isMobile ? "absolute left-0 top-0 z-20 w-full max-w-xs" : "relative"}
+        flex flex-col w-full md:w-[340px]
+        h-[calc(100vh-3.5rem)]
+        border-r border-white/10 theme-animate
+        ${isDark ? "bg-darkmode text-darkmode" : "bg-lightmode text-lightmode"}
       `}
     >
-      {/* Header */}
-      <div className="flex items-center mt-12 justify-between px-4 py-4 border-b border-white/10">
-        <h2 className="text-xl font-extrabold">Direct Messages</h2>
-        <div className="flex gap-2">
-          <button className="icon-hover p-2">
-            <Settings />
+      {/* ================= Header ================= */}
+      <div
+        className={`flex items-center justify-between px-4 py-4 border-b mt-14
+        ${isDark ? "border-white/10" : "border-black/10"}`}
+      >
+        <h2 className="text-lg font-bold tracking-wide font-bold">
+          Direct Messages
+        </h2>
+
+        {isMobile && (
+          <button
+            onClick={() => setShowChatMobile(false)}
+            className="p-2 rounded-lg md:hidden icon-hover"
+          >
+            <X size={20} />
           </button>
-          <button className="p-2 rounded-xl bg-gradient-to-tr from-blue-500 to-purple-500 text-white">
-            <Plus />
-          </button>
-        </div>
+        )}
       </div>
 
-      {/* Search */}
-      <div className="px-4 pb-2">
+      {/* ================= Search ================= */}
+      <div className="px-4 py-3">
         <div
-          className={`flex items-center gap-2 rounded-full px-4 py-2
-            ${isDark ? "bg-white/10" : "bg-black/10"}`}
+          className={`flex items-center gap-2 rounded-full px-4 py-2.5
+          transition-all duration-300
+          ${
+            isDark
+              ? "bg-slate-800/50 border border-slate-700/50"
+              : "bg-gray-100 border border-gray-200"
+          }`}
         >
+          <Mic size={18} className="opacity-70" />
           <input
-            placeholder="Jump to or Search..."
-            className="flex-1 bg-transparent outline-none"
+            placeholder="Search users..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="flex-1 bg-transparent outline-none text-sm"
           />
-          <Mic size={18} />
+          {searchQuery && (
+            <X
+              size={16}
+              onClick={() => setSearchQuery("")}
+              className="cursor-pointer opacity-60 hover:opacity-100"
+            />
+          )}
         </div>
       </div>
 
-      {/* Users List */}
-      <div className="flex-1 overflow-y-auto hide-scrollbar px-2 space-y-2 pb-4">
-        {users.map((u) => {
-          const isOnline = onlineUsers.includes(u._id?.toString());
-const isActive =
-  activeChat?.members?.some(
-    (m) => (typeof m === "string" ? m : m._id) === u._id
-  );
-          return (
-            <div
-              key={u._id}
-              onClick={() => {
-                onUserClick(u._id);
-                if (isMobile) setShowChatMobile(true);
-              }}
-              className={`
-  flex items-center gap-3 px-4 py-3 mt-3 rounded-xl cursor-pointer
-  transition-colors
-  ${
-    isActive
-      ? isDark
-        ? "bg-white/30 ring-2 ring-blue-500"
-        : "bg-blue-100 ring-2 ring-blue-400"
-      : isDark
-      ? "bg-white/10 hover:bg-white/20"
-      : "bg-black/5 hover:bg-black/10"
-  }
-`}
-            >
-              {/* Avatar */}
-              <div className="relative w-10 h-10">
-                <div className="w-10 h-10 rounded-full bg-blue-500 text-white flex items-center justify-center font-bold">
-                  {u?.fullName?.[0]}
+      {/* ================= User List ================= */}
+      <div className="flex-1 overflow-y-auto hide-scrollbar px-2 pb-4">
+        <div className="space-y-1.5 mt-3">
+          {filteredUsers.map((u) => {
+            const isOnline = onlineUsers.includes(u._id);
+            const isActive = activeChat?.members
+              ? activeChat.members.some(
+                  (m) => (typeof m === "string" ? m : m._id) === u._id
+                )
+              : activeChat === u._id;
+
+            return (
+              <div
+                key={u._id}
+                onClick={() => handleUserClick(u._id)}
+                className={`flex items-center gap-3 px-3 py-2.5 rounded-lg cursor-pointer
+                  transition-all duration-300 group
+                  ${
+                    isActive
+                      ? isDark
+                        ? "bg-white/20 ring-2 ring-blue-500 shadow-lg"
+                        : "bg-blue-100 ring-2 ring-blue-400 shadow-md"
+                      : isDark
+                      ? "hover:bg-white/15 active:bg-white/25"
+                      : "hover:bg-black/8 active:bg-black/12"
+                  }`}
+              >
+                {/* Avatar */}
+                <div className="relative flex-shrink-0">
+                  <div
+                    className={`w-11 h-11 rounded-full text-white flex items-center
+                    justify-center font-bold text-sm
+                    ${
+                      isActive
+                        ? "bg-gradient-to-br from-blue-500 to-blue-600"
+                        : "bg-gradient-to-br from-blue-400 to-blue-500"
+                    }
+                    group-hover:scale-110 transition-transform duration-300
+                    shadow-sm`}
+                  >
+                    {u?.fullName?.[0]?.toUpperCase()}
+                  </div>
+
+                  {/* Online Indicator */}
+                  <span
+                    className={`absolute bottom-0 right-0 w-3 h-3 rounded-full
+                      border-2 transition-colors duration-300
+                      ${
+                        isOnline
+                          ? "bg-green-500 border-green-600"
+                          : "bg-gray-400 border-gray-500"
+                      }
+                      ${isDark ? "ring-1 ring-gray-800" : "ring-1 ring-white"}`}
+                  />
                 </div>
 
-                {/* Online dot */}
-                <span
-                  className={`absolute bottom-0 right-0 w-3 h-3 rounded-full border-2
-                    ${isOnline ? "bg-green-500" : "bg-gray-400"}
-                    ${isDark ? "border-gray-800" : "border-white"}`}
-                  title={isOnline ? "Online" : "Offline"}
-                />
-              </div>
+                {/* User Info */}
+                <div className="flex-1 min-w-0">
+                  <p className="font-semibold text-sm truncate">
+                    {u.fullName}
+                  </p>
+                  <p
+                    className={`text-xs truncate opacity-70
+                    ${isDark ? "text-gray-300" : "text-gray-600"}`}
+                  >
+                    Click to Chat
+                  </p>
+                </div>
 
-              {/* Name */}
-              <div className="flex-1 truncate">
-                <p className="font-semibold truncate">{u.fullName}</p>
-                <p className="text-xs opacity-70 truncate">Tap to chat</p>
+                {/* Old Vertical Active Bar */}
+                {isActive && (
+                  <div
+                    className="flex-shrink-0 w-1.5 h-6 rounded-full
+                    bg-gradient-to-b from-blue-400 to-blue-600"
+                  />
+                )}
               </div>
+            );
+          })}
+
+          {/* Empty State */}
+          {filteredUsers.length === 0 && (
+            <div className="flex justify-center py-10">
+              <p className="text-sm opacity-60">
+                {searchQuery ? "No users found" : "No users available"}
+              </p>
             </div>
-          );
-        })}
-
-        {users.length === 0 && (
-          <p className="text-center text-sm opacity-60 mt-10">
-            No users found
-          </p>
-        )}
+          )}
+        </div>
       </div>
     </aside>
   );

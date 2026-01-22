@@ -1,83 +1,41 @@
 @import "tailwindcss";
 
+/* Fonts */
+.font-light { font-family: "Oswald", sans-serif; font-weight: 300; }
+.font-regular { font-family: "Oswald", sans-serif; font-weight: 400; }
+.font-medium { font-family: "Oswald", sans-serif; font-weight: 500; }
+.font-bold { font-family: "Oswald", sans-serif; font-weight: 700; }
 
-
-.font-regular {
-  font-family: "Oswald", sans-serif;
-  font-optical-sizing: auto;
-  font-weight: 400;
-  font-style: normal;
-}
-
-.font-light {
-  font-family: "Oswald", sans-serif;
-  font-weight: 300;
-}
-
-.font-regular {
-  font-family: "Oswald", sans-serif;
-  font-weight: 400;
-}
-
-.font-medium {
-  font-family: "Oswald", sans-serif;
-  font-weight: 500;
-}
-
-.font-bold {
-  font-family: "Oswald", sans-serif;
-  font-weight: 700;
-}
-
+/* Icons */
 .icon-hover {
   cursor: pointer;
   transition: transform 0.25s ease-in-out, filter 0.25s ease-in-out;
 }
-
 .icon-hover:hover {
   transform: scale(1.2);
   filter: drop-shadow(0 4px 8px rgba(0, 0, 0, 0.25));
 }
-
 .icon-hover:active {
   transform: scale(0.85);
-  filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.25));
 }
 
+/* Theme animation */
 .theme-animate {
-  transition:
-    background-color 0.45s ease,
-    color 0.45s ease;
+  transition: background-color 0.45s ease, color 0.45s ease;
 }
 
-/* already existing */
-.bg-darkmode {
-  background-color: #030521;
-}
+/* Dark / Light */
+.bg-darkmode { background-color: #030521; }
+.bg-lightmode { background-color: #ffffff; }
+.text-darkmode { color: #ffffff; }
+.text-lightmode { color: #000000; }
 
-.bg-lightmode {
-  background-color: #ffffff;
-}
-
-.text-darkmode {
-  color: #ffffff;
-}
-
-.text-lightmode {
-  color: #000000;
-}
-
-
+/* Scrollbar */
 .hide-scrollbar {
-  /* For Firefox */
   scrollbar-width: none;
-  /* For Internet Explorer and Edge (legacy) */
   -ms-overflow-style: none;
-  /* Keep content scrollable */
-  overflow-y: scroll; /* or overflow: auto */
+  overflow-y: auto;
 }
-
-/* For Chrome, Safari, and Opera (WebKit-based browsers) */
 .hide-scrollbar::-webkit-scrollbar {
   display: none;
 }

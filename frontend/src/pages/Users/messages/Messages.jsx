@@ -111,7 +111,7 @@ const Messages = () => {
 
   return (
     <div
-      className={`flex h-screen font-regular overflow-hidden ml-18 border-x-2 border-amber-50 ${
+      className={`flex h-screen font-regular overflow-hidden ml-18  ${
         isDark ? "bg-darkmode text-white" : "bg-lightmode text-black"
       }`}
     >

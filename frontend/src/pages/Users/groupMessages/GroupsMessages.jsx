@@ -180,6 +180,7 @@ const GroupsMessages = () => {
               me={me}
               typingUser={typingUser}
               messagesEndRef={messagesEndRef}
+               isDark={isDark}
             />
 
             <ChatInput

@@ -1,5 +1,8 @@
-import { Mic, Plus } from "lucide-react";
-import { useState } from "react";
+import axios from "axios";
+import { ArrowLeft, Check, Loader, Mic, Plus, Search } from "lucide-react";
+import { useEffect, useState } from "react";
+
+const BASE = import.meta.env.VITE_BASE_URL;
 
 const ChatSidebar = ({
   groups = [],
@@ -8,27 +11,79 @@ const ChatSidebar = ({
   setShowChatMobile,
   isDark,
   activeChat,
+  setGroups = () => {}, // ✅ Safe fallback if prop missing
 }) => {
   const [addPeople, setAddPeople] = useState(false);
+  const [users, setUsers] = useState([]);
+  const [groupName, setGroupName] = useState("");
+  const [selectedUsers, setSelectedUsers] = useState([]);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [step, setStep] = useState(1);
+  const [isCreating, setIsCreating] = useState(false);
+
+  // Fetch users when modal opens
+  useEffect(() => {
+    if (addPeople) fetchUsers();
+  }, [addPeople]);
+
+  const fetchUsers = async () => {
+    const res = await axios.get(`${BASE}/api/groups/getAllUsers`, {
+      withCredentials: true,
+    });
+    setUsers(res.data || []);
+  };
+
+  const filteredUsers = users.filter(
+    (u) =>
+      u.fullName?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      u.email?.toLowerCase().includes(searchQuery.toLowerCase())
+  );
+
+  const toggleUser = (id) => {
+    setSelectedUsers((prev) =>
+      prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]
+    );
+  };
+
+  const createGroup = async (e) => {
+    e?.preventDefault();
+    if (!groupName || selectedUsers.length < 1) return; // ✅ Allow 1 user
+
+    setIsCreating(true);
+    try {
+      const res = await axios.post(
+        `${BASE}/api/groups/addPeople`,
+        { name: groupName, users: selectedUsers },
+        { withCredentials: true }
+      );
+
+      setGroups((prev) => [res.data, ...prev]);
+      setAddPeople(false);
+      setStep(1);
+      setGroupName("");
+      setSelectedUsers([]);
+      setSearchQuery("");
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setIsCreating(false);
+    }
+  };
 
   return (
     <>
       {/* ================= SIDEBAR ================= */}
       <aside
-        className={`
-          ${isMobile ? "absolute left-0 top-0 z-20" : "relative"}
-          flex flex-col
-          w-full md:w-[340px]
-          h-full
+        className={` mt-14
+          ${isMobile ? "absolute z-20" : "relative"}
+          w-full md:w-[340px] h-full flex flex-col
           border-r border-white/10
-          backdrop-blur-xl
-          ${isDark ? "bg-darkmode" : "bg-lightmode"}
+          ${isDark ? "bg-slate-900 text-white" : "bg-white text-gray-900"}
         `}
       >
         {/* Header */}
-        <div className="flex items-center mt-12 justify-between px-4 py-4 border-b border-white/10">
-          <h2 className="text-xl font-extrabold">Group Messages</h2>
-
+        <div className="flex items-center justify-between px-4 py-4 border-b border-white/10">
+          <h2 className="text-xl font-bold">Group Messages</h2>
           <button
             onClick={() => setAddPeople(true)}
             className="p-2 rounded-xl bg-gradient-to-tr from-blue-500 to-purple-500 text-white"
@@ -38,10 +93,10 @@ const ChatSidebar = ({
         </div>
 
         {/* Search */}
-        <div className="px-4 pb-2">
+        <div className="px-4 py-3">
           <div
             className={`flex items-center gap-2 rounded-full px-4 py-2
-            ${isDark ? "bg-white/10" : "bg-black/10"}`}
+              ${isDark ? "bg-white/10" : "bg-black/5"}`}
           >
             <input
               placeholder="Search groups..."
@@ -51,89 +106,162 @@ const ChatSidebar = ({
           </div>
         </div>
 
-        {/* Groups List */}
-        <div className="flex-1 overflow-y-auto hide-scrollbar px-2 space-y-2 pb-4">
-          {groups.map((group) => {
-            const isActive = activeChat?._id === group._id;
-
+        {/* Groups */}
+        <div className="flex-1 overflow-y-auto px-2">
+          {groups.map((g) => {
+            const active = activeChat?._id === g._id;
             return (
               <div
-                key={group._id}
+                key={g._id}
                 onClick={() => {
-                  onUserClick(group._id);
+                  onUserClick(g._id);
                   if (isMobile) setShowChatMobile(true);
                 }}
-                className={`
-                  flex items-center gap-3 px-4 py-3 mt-3 rounded-xl cursor-pointer
-                  transition-colors
+                className={`px-4 py-3 mt-2 rounded-xl cursor-pointer
                   ${
-                    isActive
-                      ? isDark
-                        ? "bg-white/30 ring-2 ring-blue-500"
-                        : "bg-blue-100 ring-2 ring-blue-400"
+                    active
+                      ? "bg-blue-500/20 ring-2 ring-blue-500"
                       : isDark
-                      ? "bg-white/10 hover:bg-white/20"
-                      : "bg-black/5 hover:bg-black/10"
-                  }
-                `}
+                      ? "hover:bg-white/10"
+                      : "hover:bg-black/5"
+                  }`}
               >
-                {/* Group Avatar */}
-                <div className="w-10 h-10 rounded-full bg-purple-500 text-white flex items-center justify-center font-bold">
-                  {group.groupName?.[0]}
-                </div>
-
-                {/* Group Info */}
-                <div className="flex-1 truncate">
-                  <p className="font-semibold truncate">
-                    {group.groupName}
-                  </p>
-                  <p className="text-xs opacity-70 truncate">
-                    {group.members.length} members
-                  </p>
-                </div>
+                <p className="font-semibold">{g.groupName}</p>
+                <p className="text-xs opacity-70">{g.members.length} members</p>
               </div>
             );
           })}
-
-          {groups.length === 0 && (
-            <p className="text-center text-sm opacity-60 mt-10">
-              No groups found
-            </p>
-          )}
         </div>
       </aside>
 
-      {/* ================= ADD PEOPLE POPUP ================= */}
+      {/* ================= ADD MEMBERS MODAL ================= */}
       {addPeople && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm">
-          <div className="bg-white dark:bg-darkmode p-6 rounded-xl shadow-lg w-full max-w-md">
-            <h2 className="text-xl font-bold mb-2">
-              Add People to Group
-            </h2>
+        <div className="fixed inset-0 z-50 bg-black/50 flex justify-center items-center p-4">
+          <div
+            className={`w-full max-w-md rounded-3xl overflow-hidden shadow-xl
+              ${isDark ? "bg-slate-900 text-white" : "bg-white text-gray-900"}`}
+          >
+            {/* STEP 1 */}
+            {step === 1 && (
+              <>
+                <div className="p-4 border-b border-white/10">
+                  <div className="flex items-center justify-between">
+                    <button onClick={() => setAddPeople(false)}>
+                      <ArrowLeft />
+                    </button>
+                    <div className="text-center">
+                      <p className="font-bold">Add members</p>
+                      <p className="text-xs opacity-70">
+                        {selectedUsers.length}/{users.length}
+                      </p>
+                    </div>
+                    <button
+                      onClick={
+                        () => selectedUsers.length >= 1 && setStep(2) // ✅ Allow 1 user
+                      }
+                      disabled={selectedUsers.length < 1} // ✅ Fixed condition
+                      className={`px-3 py-1 rounded-lg font-semibold
+                        ${
+                          selectedUsers.length < 1
+                            ? "opacity-40"
+                            : "bg-blue-500 text-white"
+                        }`}
+                    >
+                      Next
+                    </button>
+                  </div>
 
-            <p className="mb-4 text-sm opacity-70">
-              Select users to add to the group
-            </p>
+                  <div className="mt-4 relative">
+                    <Search
+                      size={18}
+                      className="absolute left-3 top-1/2 -translate-y-1/2 opacity-50"
+                    />
+                    <input
+                      value={searchQuery}
+                      onChange={(e) => setSearchQuery(e.target.value)}
+                      placeholder="Search name or Email"
+                      className={`w-full pl-10 pr-4 py-2 rounded-xl
+                        ${isDark ? "bg-white/10" : "bg-black/5"}
+                        outline-none`}
+                    />
+                  </div>
+                </div>
 
-            {/* Users list will come here */}
-            <div className="space-y-2 max-h-60 overflow-y-auto">
-              {/* TODO: map users */}
-            </div>
+                <div className="max-h-[60vh] overflow-y-auto p-2">
+                  {filteredUsers.map((u) => {
+                    const sel = selectedUsers.includes(u._id);
+                    return (
+                      <div
+                        key={u._id}
+                        onClick={() => toggleUser(u._id)}
+                        className={`flex items-center gap-3 p-3 rounded-xl cursor-pointer
+                          ${
+                            sel
+                              ? "bg-blue-500/20"
+                              : isDark
+                              ? "hover:bg-white/10"
+                              : "hover:bg-black/5"
+                          }`}
+                      >
+                        <div className="w-10 h-10 rounded-full bg-purple-500 flex items-center justify-center text-white font-bold">
+                          {u.fullName?.[0]}
+                        </div>
+                        <div className="flex-1">
+                          <p className="font-semibold">{u.fullName}</p>
+                          <p className="text-xs opacity-70">{u.email}</p>
+                        </div>
+                        <div
+                          className={`w-5 h-5 rounded-full border flex items-center justify-center
+                            ${
+                              sel
+                                ? "bg-blue-500 border-blue-500"
+                                : "border-gray-400"
+                            }`}
+                        >
+                          {sel && <Check size={12} />}
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </>
+            )}
 
-            <div className="flex justify-end gap-2 mt-4">
-              <button
-                onClick={() => setAddPeople(false)}
-                className="px-4 py-2 rounded-lg bg-gray-400 text-white"
-              >
-                Cancel
-              </button>
+            {/* STEP 2 */}
+            {step === 2 && (
+              <div className="p-6 space-y-6">
+                <button onClick={() => setStep(1)}>
+                  <ArrowLeft />
+                </button>
 
-              <button
-                className="px-4 py-2 rounded-lg bg-blue-500 text-white"
-              >
-                Add Selected
-              </button>
-            </div>
+                <div className="text-center">
+                  <h2 className="text-2xl font-bold">New Group</h2>
+                  <p className="text-sm opacity-70">Add a subject</p>
+                </div>
+
+                <input
+                  value={groupName}
+                  onChange={(e) => setGroupName(e.target.value.slice(0, 50))}
+                  placeholder="Group name"
+                  className={`w-full px-4 py-3 rounded-xl outline-none
+                    ${isDark ? "bg-white/10" : "bg-black/5"}`}
+                />
+
+                <button
+                  onClick={createGroup}
+                  disabled={!groupName || isCreating}
+                  className={`w-full py-3 rounded-xl font-semibold flex justify-center gap-2
+                    ${
+                      !groupName || isCreating
+                        ? "opacity-40"
+                        : "bg-blue-500 text-white"
+                    }`}
+                >
+                  {isCreating && <Loader size={18} className="animate-spin" />}
+                  {isCreating ? "Creating..." : "Create Group"}
+                </button>
+              </div>
+            )}
           </div>
         </div>
       )}

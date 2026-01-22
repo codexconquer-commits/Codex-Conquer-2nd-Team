@@ -26,6 +26,7 @@ const GroupsMessages = () => {
 
   const [isMobile, setIsMobile] = useState(window.innerWidth <= 768);
   const [showChatMobile, setShowChatMobile] = useState(false);
+  const [users, setUsers] = useState([]);
 
   const messagesEndRef = useRef(null);
 
@@ -75,6 +76,7 @@ const GroupsMessages = () => {
     return () => window.removeEventListener("resize", resize);
   }, []);
 
+
   /* ================= OPEN GROUP CHAT ================= */
 
   const openGroupChat = async (groupId) => {
@@ -119,6 +121,10 @@ const GroupsMessages = () => {
     });
   };
 
+
+
+
+
   /* ================= UI ================= */
 
   return (
@@ -130,14 +136,14 @@ const GroupsMessages = () => {
       {!(isMobile && showChatMobile) && <Navbar />}
 
       <ChatSidebar
-        groups={groups}
-        onUserClick={openGroupChat}
-        isMobile={isMobile}
-        setShowChatMobile={setShowChatMobile}
-        isDark={isDark}
-        activeChat={activeChat}
-        setAddPeople={() => {}}
-      />
+  groups={groups}
+  setGroups={setGroups}   // 🔥 VERY IMPORTANT
+  onUserClick={openGroupChat}
+  isMobile={isMobile}
+  setShowChatMobile={setShowChatMobile}
+  isDark={isDark}
+  activeChat={activeChat}
+/>
 
       <main
         className={

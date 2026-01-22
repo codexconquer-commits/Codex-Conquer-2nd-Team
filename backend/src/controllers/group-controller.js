@@ -15,18 +15,7 @@ export const getMyGroups = async (req, res) => {
         "-password -otp -otpExpiry -__v"
       );
 
-    // 🔥 Admin check + console
-    groups.forEach((group) => {
-      console.log("Group Name:", group.groupName);
-      console.log("User ID:", userId.toString());
-      console.log("Group Admin ID:", group.groupAdmin.toString());
 
-      if (group.groupAdmin.toString() === userId.toString()) {
-        console.log("✅ Admin Access Granted");
-      } else {
-        console.log("👤 Standard Member");
-      }
-    });
 
     res.status(200).json(groups);
 
@@ -38,8 +27,9 @@ export const getMyGroups = async (req, res) => {
 
 export const createGroupChat = async (req, res) => {
   const { name, users } = req.body;
+  console.log("Create Group Chat Request Body:", req.body);
 
-  if (!name || !users || users.length < 2) {
+  if (!name || !users || users.length < 1) {
     return res.status(400).json({
       message: "Group name & minimum 2 users required",
     });

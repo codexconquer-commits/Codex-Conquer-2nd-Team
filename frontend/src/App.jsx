@@ -13,7 +13,7 @@ import Profile from "./pages/Users/Profile.jsx";
 import GroupsMessages from "./pages/Users/groupMessages/GroupsMessages.jsx";
 
 const App = () => {
-  const [isDark, setIsDark] = useState(false);
+  const [isDark, setIsDark] = useState(true);
 
   return (
     <AppContext.Provider value={{ isDark, setIsDark }}>

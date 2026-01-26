@@ -1,6 +1,7 @@
-import axios from "axios";
 import { ArrowLeft, Check, Loader, Mic, Plus, Search } from "lucide-react";
 import { useEffect, useState } from "react";
+import api from "../../../api/axios";
+
 
 const BASE = import.meta.env.VITE_BASE_URL;
 
@@ -11,6 +12,7 @@ const ChatSidebar = ({
   setShowChatMobile,
   isDark,
   activeChat,
+  setIsGroupInfoOpen,
   setGroups = () => {},
 }) => {
   const [addPeople, setAddPeople] = useState(false);
@@ -21,6 +23,7 @@ const ChatSidebar = ({
   const [step, setStep] = useState(1);
   const [isCreating, setIsCreating] = useState(false);
 
+
   // Fetch users when modal opens
   useEffect(() => {
     if (addPeople) fetchUsers();
@@ -28,7 +31,8 @@ const ChatSidebar = ({
 
   const fetchUsers = async () => {
     try {
-      const res = await axios.get(`${BASE}/api/groups/getAllUsers`, {
+      setIsGroupInfoOpen(false);
+      const res = await api.get(`/api/groups/getAllUsers`, {
         withCredentials: true,
       });
       setUsers(res.data || []);
@@ -55,8 +59,9 @@ const ChatSidebar = ({
 
     setIsCreating(true);
     try {
-      const res = await axios.post(
-        `${BASE}/api/groups/addPeople`,
+      
+      const res = await api.post(
+        `/api/groups/addPeople`,
         { name: groupName, users: selectedUsers },
         { withCredentials: true }
       );

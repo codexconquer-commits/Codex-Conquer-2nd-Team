@@ -2,6 +2,7 @@ import Message from "../models/message-model.js";
 import Chat from "../models/chat-model.js";
 import UserModel from "../models/user-model.js";
 
+
 export const getMyGroups = async (req, res) => {
   try {
     const userId = req.user._id;
@@ -10,21 +11,20 @@ export const getMyGroups = async (req, res) => {
       isGroupChat: true,
       members: { $in: [userId] },
     })
-      .populate(
-        "members",
-        "-password -otp -otpExpiry -__v"
-      );
-
-
+      .populate("members", "fullName email")
+      .populate("groupAdmin", "fullName email");
 
     res.status(200).json(groups);
+   groups.forEach(group => {
+  console.log("Admin Name:", group.groupAdmin?.fullName);
+  console.log("Admin Email:", group.groupAdmin?.email);
+});
 
   } catch (error) {
     console.error(error);
     res.status(500).json({ message: "Server Error" });
   }
 };
-
 export const createGroupChat = async (req, res) => {
   const { name, users } = req.body;
   console.log("Create Group Chat Request Body:", req.body);
@@ -57,6 +57,7 @@ export const createGroupChat = async (req, res) => {
 export const getAllUsers = async (req,res)=>{
   try {
     const users = await UserModel.find({_id:{$ne:req.user._id}}).select("-password -otp -otpExpiry -__v");
+    console.log("Fetched Users:", users);
     res.status(200).json(users);
 
   } catch (error) {
@@ -65,3 +66,42 @@ export const getAllUsers = async (req,res)=>{
 
   }
 }
+
+
+export const removeUser = async (req, res) => {
+  try {
+    const { groupId, userId } = req.body;
+
+    if (!groupId || !userId) {
+      return res.status(400).json({
+        message: "Group ID and User ID are required",
+      });
+    }
+    
+
+    const group = await Chat.findById(groupId).select("groupAdmin");
+
+    if (!group) {
+      return res.status(404).json({ message: "Group not found" });
+    }
+
+    if (group.groupAdmin.toString() === userId) {
+      return res
+        .status(400)
+        .json({ message: "Cannot remove the group admin" });
+    }
+
+    const updatedGroup = await Chat.findByIdAndUpdate(
+      groupId,
+      { $pull: { members: userId } },
+      { new: true }
+    )
+      .populate("members", "-password")
+      .populate("groupAdmin", "-password");
+
+    res.status(200).json(updatedGroup);
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: "Server Error" });
+  }
+};

@@ -7,7 +7,9 @@ const router = express.Router();
 router.post("/addPeople",authMiddleware,groupController.createGroupChat)
 router.get("/myGroups", authMiddleware, groupController.getMyGroups);
 router.get("/getAllUsers", authMiddleware, groupController.getAllUsers);
+router.put("/removeUser", authMiddleware, groupController.removeUser);
 
 
 
 export default router;
+

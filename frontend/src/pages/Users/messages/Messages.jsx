@@ -10,6 +10,7 @@ import ChatInput from "./ChatInput";
 import ChatMessages from "./ChatMessages";
 import ChatSidebar from "./ChatSidebar";
 import useMessagesSocket from "./useMessagesSocket";
+import api from "../../../api/axios";
 
 const BASE = import.meta.env.VITE_BASE_URL;
 
@@ -31,18 +32,20 @@ const Messages = () => {
 
   /* ================= API ================= */
 
-  useEffect(() => {
-    axios.get(`${BASE}/api/users/me`, { withCredentials: true }).then((res) => {
+useEffect(() => {
+  api.get("/api/users/me")
+    .then((res) => {
       setMe(res.data);
-      socket.emit("add-user", res.data._id); // ✅ online user
-    });
-  }, []);
+      socket.emit("add-user", res.data._id);
+    })
+    .catch(console.error);
+}, []);
 
-  useEffect(() => {
-    axios.get(`${BASE}/api/users`, { withCredentials: true }).then((res) => {
-      setUsers(res.data || []);
-    });
-  }, []);
+useEffect(() => {
+  api.get("/api/users").then((res) => {
+    setUsers(res.data || []);
+  });
+}, []);
 
   /* ================= SOCKET ================= */
 
@@ -79,9 +82,7 @@ const Messages = () => {
     // ✅ JOIN ROOM (important for group & private)
     socket.emit("join-chat", res.data._id);
 
-    const msgs = await axios.get(`${BASE}/api/messages/${res.data._id}`, {
-      withCredentials: true,
-    });
+    const msgs = await api.get(`/api/messages/${res.data._id}`);
 
     setMessages(msgs.data || []);
     if (isMobile) setShowChatMobile(true);
@@ -95,7 +96,6 @@ const Messages = () => {
     const res = await axios.post(
       `${BASE}/api/messages`,
       { chatId: activeChat._id, text },
-      { withCredentials: true }
     );
 
     // ✅ Local update
@@ -138,7 +138,11 @@ const Messages = () => {
         {!activeChat ? (
           <div className="flex-1 flex flex-col items-center justify-center text-center px-4">
             <div className="w-28 h-28 mb-6 rounded-3xl bg-gradient-to-tr from-blue-500 via-purple-500 to-pink-500 flex items-center justify-center shadow-xl">
-              <img src={Logo} alt="App Logo" className="w-16 h-16 rounded-full" />
+              <img
+                src={Logo}
+                alt="App Logo"
+                className="w-16 h-16 rounded-full"
+              />
             </div>
 
             <h1 className="text-3xl font-extrabold tracking-tight">
@@ -146,7 +150,8 @@ const Messages = () => {
             </h1>
 
             <p className="opacity-70 max-w-md mt-3 text-sm sm:text-base">
-              Send and receive messages without relying on your phone connection.
+              Send and receive messages without relying on your phone
+              connection.
             </p>
 
             <div className="flex items-center gap-2 mt-10 text-xs opacity-60">

@@ -2,6 +2,7 @@ import axios from "axios";
 import { useEffect, useRef, useState } from "react";
 import socket from "../../socket/socket.js";
 import Navbar from "../../components/Navbar";
+import api from "../../api/axios.js";
 
 
 const BASE = import.meta.env.VITE_BASE_URL;
@@ -9,7 +10,7 @@ const BASE = import.meta.env.VITE_BASE_URL;
 const Home = () => {
   const [users, setUsers] = useState([]);
   const [me, setMe] = useState(null);
-  const [activeChat, setActiveChat] = useState(null);
+  const [activeChat, setActiveChatx] = useState(null);
   const [messages, setMessages] = useState([]);
   const [text, setText] = useState("");
 
@@ -19,19 +20,17 @@ const [typingUser, setTypingUser] = useState("");
 const typingTimeoutRef = useRef(null);
 
   /* ================= AUTH USER ================= */
-  useEffect(() => {
-    axios
-      .get(`${BASE}/api/users/me`, { withCredentials: true })
-      .then((res) => {
-        setMe(res.data);
-        socket.emit("add-user", res.data._id);
-        console.log("🧑 logged in:", res.data.fullName);
-      });
-  }, []);
+useEffect(() => {
+  api.get("/api/users/me").then((res) => {
+    setMe(res.data);
+    socket.emit("add-user", res.data._id);
+    console.log("🧑 logged in:", res.data.fullName);
+  });
+}, []);
 
   /* ================= USERS ================= */
   useEffect(() => {
-    axios.get(`${BASE}/api/users`, { withCredentials: true }).then((res) => {
+    api.get("/api/users").then((res) => {
       setUsers(res.data || []);
     });
   }, []);
@@ -64,10 +63,9 @@ const typingTimeoutRef = useRef(null);
 
   /* ================= OPEN CHAT ================= */
   const openChat = async (userId) => {
-    const res = await axios.post(
-      `${BASE}/api/chats`,
+    const res = await api.post(
+      `/api/chats`,
       { userId },
-      { withCredentials: true }
     );
 
     const chat = res.data;
@@ -76,9 +74,7 @@ const typingTimeoutRef = useRef(null);
     socket.emit("join-chat", chat._id);
     console.log("📥 joined chat:", chat._id);
 
-    const msgs = await axios.get(`${BASE}/api/messages/${chat._id}`, {
-      withCredentials: true,
-    });
+    const msgs = await api.get(`/api/messages/${chat._id}`);
 
     setMessages(msgs.data || []);
   };
@@ -87,10 +83,9 @@ const typingTimeoutRef = useRef(null);
   const sendMessage = async () => {
     if (!text || !activeChat) return;
 
-    const res = await axios.post(
-      `${BASE}/api/messages`,
-      { chatId: activeChat._id, text },
-      { withCredentials: true }
+    const res = await api.post(
+      `/api/messages`,
+      { chatId: activeChat._id, text }
     );
 
     setMessages((prev) => [...prev, res.data]);
@@ -207,7 +202,7 @@ const typingTimeoutRef = useRef(null);
             </button>
           </>
         )}
-      </div>
+      </div> 
     </div>
   );
 };

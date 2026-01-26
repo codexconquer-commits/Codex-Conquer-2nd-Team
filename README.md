@@ -99,11 +99,8 @@ Codex-Conquer-2nd-Team/
 ### Backend (.env)
 
 ```
-PORT=5000
-MONGODB_URI=mongodb+srv://username:password@cluster.mongodb.net/chat-app
-JWT_SECRET=your_jwt_secret_key
-CORS_ORIGIN=http://localhost:3000
-NODE_ENV=development
+PORT=4000
+
 ```
 
 ### Frontend (.env.local)
@@ -171,6 +168,3 @@ Please ensure your code follows the project's coding standards and includes appr
 
 This project is licensed under the MIT License - see the LICENSE file for details.
 
----
-
-**Made with ❤️ by the Codex-Conquer Team**

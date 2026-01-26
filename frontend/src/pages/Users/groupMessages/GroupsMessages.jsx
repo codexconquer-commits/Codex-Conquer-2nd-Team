@@ -1,21 +1,23 @@
-import axios from "axios";
 import { useContext, useEffect, useRef, useState } from "react";
+import Logo from "../../../assets/download-removebg-preview.png";
 import Navbar from "../../../components/Navbar";
 import { AppContext } from "../../../context/Theme-Context";
 import socket from "../../../socket/socket.js";
-import Logo from "../../../assets/download-removebg-preview.png";
 
+import api from "../../../api/axios";
+import useMessagesSocket from "../messages/useMessagesSocket.js";
 import ChatHeader from "./ChatHeader";
 import ChatInput from "./ChatInput";
 import ChatMessages from "./ChatMessages";
 import ChatSidebar from "./ChatSidebar";
-import useMessagesSocket from "../messages/useMessagesSocket.js";
+import GroupInformationPopUp from "./GroupInformationpopUp";
 
 const BASE = import.meta.env.VITE_BASE_URL;
 
 const GroupsMessages = () => {
   const { isDark, user } = useContext(AppContext);
-
+  const [adminGroups, setAdminGroups] = useState([]);
+  const [isAdmin, setIsAdmin] = useState(false);
   const [groups, setGroups] = useState([]);
   const [activeChat, setActiveChat] = useState(null);
   const [messages, setMessages] = useState([]);
@@ -23,6 +25,7 @@ const GroupsMessages = () => {
   const [me, setMe] = useState(null);
   const [onlineUsers, setOnlineUsers] = useState([]);
   const [typingUser, setTypingUser] = useState("");
+  const [isGroupInfoOpen, setIsGroupInfoOpen] = useState(false);
 
   const [isMobile, setIsMobile] = useState(window.innerWidth <= 768);
   const [showChatMobile, setShowChatMobile] = useState(false);
@@ -34,9 +37,7 @@ const GroupsMessages = () => {
 
   useEffect(() => {
     const loadMe = async () => {
-      const res = await axios.get(`${BASE}/api/users/me`, {
-        withCredentials: true,
-      });
+      const res = await api.get("/api/users/me");
       setMe(res.data);
       socket.emit("add-user", res.data._id);
     };
@@ -47,13 +48,20 @@ const GroupsMessages = () => {
 
   useEffect(() => {
     const loadGroups = async () => {
-      const res = await axios.get(`${BASE}/api/groups/myGroups`, {
-        withCredentials: true,
-      });
-      setGroups(res.data || []);
+      const res = await api.get("/api/groups/myGroups");
+
+      const fetchedGroups = res.data || [];
+
+      setGroups(fetchedGroups);
+      // 👑 Admin groups nikaalo
+      const adminOnlyGroups = fetchedGroups.filter(
+        (group) => group.groupAdmin?._id === user?._id
+      );
+
+      setAdminGroups(adminOnlyGroups);
     };
     loadGroups();
-  }, []);
+  }, [user?._id]);
 
   /* ================= SOCKET ================= */
 
@@ -76,10 +84,10 @@ const GroupsMessages = () => {
     return () => window.removeEventListener("resize", resize);
   }, []);
 
-
   /* ================= OPEN GROUP CHAT ================= */
 
   const openGroupChat = async (groupId) => {
+    setIsGroupInfoOpen(false);
     const group = groups.find((g) => g._id === groupId);
     if (!group) return;
 
@@ -89,9 +97,7 @@ const GroupsMessages = () => {
     socket.emit("join-chat", groupId);
 
     // 📩 fetch messages
-    const res = await axios.get(`${BASE}/api/messages/${groupId}`, {
-      withCredentials: true,
-    });
+    const res = await api.get(`${BASE}/api/messages/${groupId}`);
 
     setMessages(res.data || []);
 
@@ -101,16 +107,14 @@ const GroupsMessages = () => {
   /* ================= SEND MESSAGE ================= */
 
   const sendMessage = async () => {
+    setIsGroupInfoOpen(false);
     if (!text.trim() || !activeChat) return;
 
-    const res = await axios.post(
-      `${BASE}/api/messages`,
-      {
-        chatId: activeChat._id,
-        text,
-      },
-      { withCredentials: true }
-    );
+    const res = await api.post(`${BASE}/api/messages`, {
+      chatId: activeChat._id,
+      text,
+    });
+     setIsGroupInfoOpen(false);
 
     setMessages((prev) => [...prev, res.data]);
     setText("");
@@ -121,9 +125,40 @@ const GroupsMessages = () => {
     });
   };
 
+  // ✅ Handle member removal - sync with groups state
+  const handleMemberRemoved = (memberId, groupId) => {
+     setIsGroupInfoOpen(false);
+    setGroups((prevGroups) =>
+      prevGroups.map((g) =>
+        g._id === groupId
+          ? {
+              ...g,
+              members: g.members.filter((m) => m._id !== memberId),
+            }
+          : g
+      )
+    );
 
+    // Update active chat if viewing the same group
+    if (activeChat?._id === groupId) {
+       setIsGroupInfoOpen(false);
+      setActiveChat((prev) => ({
+        ...prev,
+        members: prev.members.filter((m) => m._id !== memberId),
+      }));
+    }
+  };
 
+  useEffect(() => {
+    if (!activeChat || !me) {
+      setIsAdmin(false);
+      return;
+    }
 
+    const adminCheck =
+      activeChat.groupAdmin?._id?.toString() === me?._id?.toString();
+    setIsAdmin(adminCheck);
+  }, [activeChat, me]);
 
   /* ================= UI ================= */
 
@@ -136,14 +171,15 @@ const GroupsMessages = () => {
       {!(isMobile && showChatMobile) && <Navbar />}
 
       <ChatSidebar
-  groups={groups}
-  setGroups={setGroups}   // 🔥 VERY IMPORTANT
-  onUserClick={openGroupChat}
-  isMobile={isMobile}
-  setShowChatMobile={setShowChatMobile}
-  isDark={isDark}
-  activeChat={activeChat}
-/>
+        groups={groups}
+        setGroups={setGroups}
+        onUserClick={openGroupChat}
+        isMobile={isMobile}
+        setShowChatMobile={setShowChatMobile}
+        isDark={isDark}
+        activeChat={activeChat}
+        setIsGroupInfoOpen={setIsGroupInfoOpen}
+      />
 
       <main
         className={
@@ -155,7 +191,11 @@ const GroupsMessages = () => {
         {!activeChat ? (
           <div className="flex-1 flex flex-col items-center justify-center text-center px-4">
             <div className="w-28 h-28 mb-6 rounded-3xl bg-gradient-to-tr from-blue-500 via-purple-500 to-pink-500 flex items-center justify-center shadow-xl">
-              <img src={Logo} alt="App Logo" className="w-16 h-16 rounded-full" />
+              <img
+                src={Logo}
+                alt="App Logo"
+                className="w-16 h-16 rounded-full"
+              />
             </div>
 
             <h1 className="text-3xl font-extrabold">Convo for Desktop</h1>
@@ -168,11 +208,13 @@ const GroupsMessages = () => {
             <ChatHeader
               activeChat={activeChat}
               me={me}
+              isAdmin={isAdmin}
               isMobile={isMobile}
               onBack={() => {
                 setShowChatMobile(false);
                 setActiveChat(null);
               }}
+              onOpenGroupInfo={() => setIsGroupInfoOpen(true)}
             />
 
             <ChatMessages
@@ -180,7 +222,7 @@ const GroupsMessages = () => {
               me={me}
               typingUser={typingUser}
               messagesEndRef={messagesEndRef}
-               isDark={isDark}
+              isDark={isDark}
             />
 
             <ChatInput
@@ -194,6 +236,17 @@ const GroupsMessages = () => {
           </>
         )}
       </main>
+
+      {/* Group Information Modal */}
+      {activeChat && (
+        <GroupInformationPopUp
+          open={isGroupInfoOpen}
+          onClose={() => setIsGroupInfoOpen(false)}
+          group={activeChat}
+          isAdmin={isAdmin}
+          onMemberRemoved={handleMemberRemoved}
+        />
+      )}
     </div>
   );
 };

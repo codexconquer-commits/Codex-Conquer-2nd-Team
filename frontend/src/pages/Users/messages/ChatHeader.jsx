@@ -1,6 +1,4 @@
 import { ArrowLeft, Phone, Video } from "lucide-react";
-import AudioCall from "./AudioCall";
-import { useState } from "react";
 
 const ChatHeader = ({
   activeChat,
@@ -9,10 +7,7 @@ const ChatHeader = ({
   isMobile,
   onBack,
   onCall,
-  isCallOpen,
-
 }) => {
-  // get other user
   const otherUser = activeChat?.members?.find(
     (m) => m._id !== me?._id
   );
@@ -22,57 +17,39 @@ const ChatHeader = ({
   );
 
   return (
-    <div
-      className="
-        sticky top-0 z-50 h-14
-        backdrop-blur-xl
-        flex items-center px-4 py-3
-        border-b border-white/10
-      "
-    >
-      <div className="flex items-center justify-between w-full">
-        {/* Back button (mobile only) */}
+    <div className="sticky top-0 z-50 h-14 backdrop-blur-xl flex items-center px-4 border-b border-white/10">
+      <div className="flex items-center w-full">
         {isMobile && (
           <button
-            className="flex gap-2 p-2 rounded-xl bg-white/10"
+            className="p-2 rounded-xl bg-white/10"
             onClick={onBack}
           >
             <ArrowLeft />
           </button>
         )}
 
-        {/* User name + status */}
-        <div className="flex flex-col justify-center gap-1 ml-4">
-          <h2 className="font-semibold text-base sm:text-lg leading-tight truncate">
+        <div className="ml-4">
+          <h2 className="font-semibold truncate">
             {otherUser?.fullName || "Unknown User"}
           </h2>
 
-          <div className="flex items-center gap-1">
+          <div className="flex items-center gap-1 text-xs text-gray-500">
             <span
               className={`h-2 w-2 rounded-full ${
-                isActiveUserOnline
-                  ? "bg-green-500"
-                  : "bg-gray-400"
+                isActiveUserOnline ? "bg-green-500" : "bg-gray-400"
               }`}
             />
-            <p className="text-xs text-gray-500">
-              {isActiveUserOnline ? "Online" : "Offline"}
-            </p>
+            {isActiveUserOnline ? "Online" : "Offline"}
           </div>
         </div>
 
-        {/* Call icons */}
         <div className="flex gap-4 ml-auto">
-         <Phone
-  className="cursor-pointer"
-  onClick={onCall}
-/>
-          <Video />
+          <Phone
+            className="cursor-pointer hover:text-green-500"
+            onClick={onCall}
+          />
+          <Video className="opacity-40 cursor-not-allowed" />
         </div>
-      </div>
-      <div className="absolute top-20 w-[95vw] md:w-[55vw]">
-
-      <AudioCall isCallOpen={isCallOpen} />
       </div>
     </div>
   );

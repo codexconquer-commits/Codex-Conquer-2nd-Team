@@ -25,6 +25,7 @@ const BASE = import.meta.env.VITE_BASE_URL;
 
 const Messages = () => {
   const { isDark, user } = useContext(AppContext);
+   const [isCallOpen, setIsCallOpen] = useState(false);
 
   const [users, setUsers] = useState([]);
   const [activeChat, setActiveChat] = useState(null);
@@ -313,10 +314,14 @@ useEffect(() => {
         ) : (
           <>
             <ChatHeader
-              onCall={startAudioCall}
+              onCall={() => {
+                startAudioCall();
+                setIsCallOpen(true)
+              }}
               activeChat={activeChat}
               me={me}
               onlineUsers={onlineUsers}
+              isCallOpen={isCallOpen}
               isMobile={isMobile}
               onBack={() => {
                 setShowChatMobile(false);

@@ -1,5 +1,6 @@
 import { ArrowLeft, Phone, Video } from "lucide-react";
 import AudioCall from "./AudioCall";
+import { useState } from "react";
 
 const ChatHeader = ({
   activeChat,
@@ -8,6 +9,8 @@ const ChatHeader = ({
   isMobile,
   onBack,
   onCall,
+  isCallOpen,
+
 }) => {
   // get other user
   const otherUser = activeChat?.members?.find(
@@ -67,9 +70,9 @@ const ChatHeader = ({
           <Video />
         </div>
       </div>
-      <div className="absolute top-10 w-[95vw] md:w-[55vw]">
+      <div className="absolute top-20 w-[95vw] md:w-[55vw]">
 
-      <AudioCall />
+      <AudioCall isCallOpen={isCallOpen} />
       </div>
     </div>
   );

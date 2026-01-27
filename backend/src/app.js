@@ -19,7 +19,7 @@ app.use(cookieParser());
 
 app.use(
   cors({
-    origin: ["http://localhost:5173","https://codex-conquer-2nd-team-2c4g.onrender.com/#/"],
+    origin: ["http://localhost:5173","https://codex-conquer-2nd-team-2c4g.onrender.com"],
     credentials: true,
   })
 );

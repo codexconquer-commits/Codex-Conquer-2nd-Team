@@ -1,4 +1,5 @@
 import { ArrowLeft, Phone, Video } from "lucide-react";
+import AudioCall from "./AudioCall";
 
 const ChatHeader = ({
   activeChat,
@@ -6,6 +7,7 @@ const ChatHeader = ({
   onlineUsers,
   isMobile,
   onBack,
+  onCall,
 }) => {
   // get other user
   const otherUser = activeChat?.members?.find(
@@ -58,9 +60,16 @@ const ChatHeader = ({
 
         {/* Call icons */}
         <div className="flex gap-4 ml-auto">
-          <Phone />
+         <Phone
+  className="cursor-pointer"
+  onClick={onCall}
+/>
           <Video />
         </div>
+      </div>
+      <div className="absolute top-10 w-[95vw] md:w-[55vw]">
+
+      <AudioCall />
       </div>
     </div>
   );

@@ -21,12 +21,14 @@ api.interceptors.request.use(
 api.interceptors.response.use(
   (response) => response,
   (error) => {
+    // ✅ Prevent infinite loops on 401 errors
     if (error.response?.status === 401) {
-      console.log("Unauthorized – redirecting to login");
-
-      localStorage.removeItem("token");
-
-      window.location.href = "/login";
+      // Check if already redirecting to prevent multiple redirects
+      if (window.location.hash !== "#/login") {
+        console.log("Unauthorized – redirecting to login");
+        localStorage.removeItem("token");
+        window.location.href = "/#/login";
+      }
     }
     return Promise.reject(error);
   }

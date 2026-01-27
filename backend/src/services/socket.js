@@ -46,7 +46,48 @@ const socketHandler = (io) => {
         }
       }
     });
-  });
+
+
+
+// 📞 CALL USER
+socket.on("call-user", ({ toUserId, offer, fromUser }) => {
+  const targetSocketId = onlineUsers.get(toUserId);
+  if (targetSocketId) {
+    io.to(targetSocketId).emit("incoming-call", {
+      offer,
+      fromUser,
+    });
+  }
+});
+
+// ✅ ACCEPT CALL
+socket.on("accept-call", ({ toUserId, answer }) => {
+  const targetSocketId = onlineUsers.get(toUserId);
+  if (targetSocketId) {
+    io.to(targetSocketId).emit("call-accepted", {
+      answer,
+    });
+  }
+});
+
+// ❌ REJECT CALL
+socket.on("reject-call", ({ toUserId }) => {
+  const targetSocketId = onlineUsers.get(toUserId);
+  if (targetSocketId) {
+    io.to(targetSocketId).emit("call-rejected");
+  }
+});
+
+// 🌐 ICE CANDIDATE
+socket.on("ice-candidate", ({ toUserId, candidate }) => {
+  const targetSocketId = onlineUsers.get(toUserId);
+  if (targetSocketId) {
+    io.to(targetSocketId).emit("ice-candidate", {
+      candidate,
+    });
+  }
+});
+});
 };
 
 export default socketHandler;

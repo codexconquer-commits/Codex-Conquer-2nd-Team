@@ -12,6 +12,15 @@ import ChatSidebar from "./ChatSidebar";
 import useMessagesSocket from "./useMessagesSocket";
 import api from "../../../api/axios";
 
+let peerConnection;
+let localStream;
+
+let remoteAudioEl;
+
+const RTC_CONFIG = {
+  iceServers: [{ urls: "stun:stun.l.google.com:19302" }],
+};
+
 const BASE = import.meta.env.VITE_BASE_URL;
 
 const Messages = () => {
@@ -71,8 +80,8 @@ useEffect(() => {
   /* ================= OPEN CHAT ================= */
 
   const openChatWithUser = async (userId) => {
-    const res = await axios.post(
-      `${BASE}/api/chats`,
+    const res = await api.post(
+      `/api/chats`,
       { userId },
       { withCredentials: true }
     );
@@ -93,8 +102,8 @@ useEffect(() => {
   const sendMessage = async () => {
     if (!text.trim() || !activeChat) return;
 
-    const res = await axios.post(
-      `${BASE}/api/messages`,
+    const res = await api.post(
+      `/api/messages`,
       { chatId: activeChat._id, text },
     );
 
@@ -108,6 +117,148 @@ useEffect(() => {
       message: res.data,
     });
   };
+
+  const attachRemoteAudio = (stream) => {
+  if (!remoteAudioEl) {
+    remoteAudioEl = document.createElement("audio");
+    remoteAudioEl.autoplay = true;
+    remoteAudioEl.playsInline = true;
+    remoteAudioEl.muted = false; // 🔥 important
+    document.body.appendChild(remoteAudioEl);
+  }
+
+  remoteAudioEl.srcObject = stream;
+
+  remoteAudioEl.play().catch((err) => {
+    console.log("🔇 Audio play blocked:", err);
+  });
+};
+
+
+  const startAudioCall = async () => {
+  if (!activeChat || !me) return;
+
+  const otherUser = activeChat.members.find(
+    (m) => m._id !== me._id
+  );
+
+  localStream = await navigator.mediaDevices.getUserMedia({
+    audio: true,
+  });
+
+  peerConnection = new RTCPeerConnection(RTC_CONFIG);
+
+  localStream.getTracks().forEach((track) => {
+    peerConnection.addTrack(track, localStream);
+  });
+
+  peerConnection.onicecandidate = (e) => {
+    if (e.candidate) {
+      socket.emit("ice-candidate", {
+        toUserId: otherUser._id,
+        candidate: e.candidate,
+      });
+    }
+  };
+
+  const offer = await peerConnection.createOffer();
+  await peerConnection.setLocalDescription(offer);
+
+  socket.emit("call-user", {
+    toUserId: otherUser._id,
+    offer,
+    fromUser: {
+      _id: me._id,
+      fullName: me.fullName,
+    },
+  });
+
+peerConnection.ontrack = (e) => {
+  const stream = e.streams[0];
+
+  stream.getAudioTracks().forEach((track) => {
+    track.enabled = true;
+    console.log("🎧 Remote track:", track);
+  });
+
+  attachRemoteAudio(stream);
+};
+
+  console.log("📞 Calling...");
+};
+
+useEffect(() => {
+  socket.on("incoming-call", async ({ offer, fromUser }) => {
+    console.log("📞 Incoming call from", fromUser.fullName);
+
+    const accept = window.confirm(
+      `Incoming call from ${fromUser.fullName}`
+    );
+
+    if (!accept) {
+      socket.emit("reject-call", {
+        toUserId: fromUser._id,
+      });
+      return;
+    }
+
+    localStream = await navigator.mediaDevices.getUserMedia({
+      audio: true,
+    });
+
+    peerConnection = new RTCPeerConnection(RTC_CONFIG);
+
+    localStream.getTracks().forEach((track) => {
+      peerConnection.addTrack(track, localStream);
+    });
+
+   peerConnection.ontrack = (e) => {
+  const stream = e.streams[0];
+
+  stream.getAudioTracks().forEach((track) => {
+    track.enabled = true;
+    console.log("🎧 Remote track:", track);
+  });
+
+  attachRemoteAudio(stream);
+};
+
+    peerConnection.onicecandidate = (e) => {
+      if (e.candidate) {
+        socket.emit("ice-candidate", {
+          toUserId: fromUser._id,
+          candidate: e.candidate,
+        });
+      }
+    };
+
+    await peerConnection.setRemoteDescription(offer);
+    const answer = await peerConnection.createAnswer();
+    await peerConnection.setLocalDescription(answer);
+
+    socket.emit("accept-call", {
+      toUserId: fromUser._id,
+      answer,
+    });
+  });
+
+  socket.on("call-accepted", async ({ answer }) => {
+    await peerConnection.setRemoteDescription(answer);
+    console.log("✅ Call connected");
+  });
+
+  socket.on("ice-candidate", async ({ candidate }) => {
+    if (candidate) {
+      await peerConnection.addIceCandidate(candidate);
+    }
+  });
+
+  return () => {
+    socket.off("incoming-call");
+    socket.off("call-accepted");
+    socket.off("ice-candidate");
+  };
+}, []);
 
   return (
     <div
@@ -162,6 +313,7 @@ useEffect(() => {
         ) : (
           <>
             <ChatHeader
+              onCall={startAudioCall}
               activeChat={activeChat}
               me={me}
               onlineUsers={onlineUsers}
@@ -196,3 +348,4 @@ useEffect(() => {
 };
 
 export default Messages;
+

@@ -59,7 +59,7 @@ const ChatSidebar = ({
 
     setIsCreating(true);
     try {
-      
+
       const res = await api.post(
         `/api/groups/addPeople`,
         { name: groupName, users: selectedUsers },
@@ -96,8 +96,8 @@ const ChatSidebar = ({
       */}
       <aside
         className={`
-          mt-14 md:mt-0
-          ${isMobile ? "absolute left-0 top-0 z-30" : "relative"}
+          mt-10 md:mt-0 overflow-hidden
+          ${isMobile ? "absolute left-0 top-0 z-30" : "relative "}
           w-full md:w-[340px] h-[calc(100vh-3.5rem)] md:h-full flex flex-col
           border-r border-white/10
           transition-all duration-300
@@ -107,18 +107,29 @@ const ChatSidebar = ({
 
         {/* Header with improved spacing and icon styling */}
         <div
-          className={`flex items-center justify-between px-5 py-4 border-b ${
+          className={`flex items-center  px-5 py-4 border-b ${
             isDark ? "border-slate-700/50" : "border-gray-200/50"
-          } backdrop-blur-sm mt-13`}
+          } backdrop-blur-sm mt-5`}
         >
-          <h2 className="text-lg font-bold tracking-tight">Group Messages</h2>
+
+          {isMobile && (
+          <button
+            onClick={() => navigate(-1)}
+            className="p-2 rounded-lg md:hidden icon-hover"
+          >
+            <ArrowLeft size={20} />
+
+          </button>
+        )}
+
+          <h2 className="text-lg font-bold tracking-tight ml-2 ">Group Messages</h2>
           <button
             onClick={() => setAddPeople(true)}
             aria-label="Create new group"
             className={`p-2.5 rounded-lg transition-all duration-300 transform active:scale-95
               bg-gradient-to-r from-blue-500 to-purple-600 text-white
               hover:shadow-lg hover:shadow-blue-500/30 hover:scale-105
-              focus:outline-none focus:ring-2 focus:ring-blue-400/30`}
+              focus:outline-none focus:ring-2 focus:ring-blue-400/30 ml-auto`}
           >
             <Plus size={20} />
           </button>
@@ -169,7 +180,7 @@ const ChatSidebar = ({
                     onUserClick(g._id);
                     if (isMobile) setShowChatMobile(true);
                   }}
-                  className={`px-4 py-3 rounded-lg mt-2 cursor-pointer transition-all duration-300 transform active:scale-98
+                  className={`px-4 py-3 overflow-y-scroll hide-scrollbar rounded-lg mt-2 cursor-pointer transition-all duration-300 transform active:scale-98
                     ${
                       active
                         ? isDark

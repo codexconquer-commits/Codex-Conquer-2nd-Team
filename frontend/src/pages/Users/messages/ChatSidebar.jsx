@@ -1,6 +1,6 @@
-import { Mic, X } from "lucide-react";
+import { Mic, X ,ArrowLeft} from "lucide-react";
 import { useState } from "react";
-
+import { useNavigate } from "react-router";
 const ChatSidebar = ({
   users = [],
   onlineUsers = [],
@@ -10,6 +10,7 @@ const ChatSidebar = ({
   isDark = false,
   activeChat,
 }) => {
+    const navigate = useNavigate();
   const [searchQuery, setSearchQuery] = useState("");
 
   const filteredUsers = users.filter(
@@ -26,30 +27,35 @@ const ChatSidebar = ({
   return (
     <aside
       className={`
-        ${isMobile ? "absolute left-0 top-0 z-20 w-full max-w-xs" : "relative"}
-        flex flex-col w-full md:w-[340px]
+        ${isMobile ? "absolute left-0 top-14 z-20 w-full " : "relative"}
+        flex flex-col md:w-[340px]
         h-[calc(100vh-3.5rem)]
         border-r border-white/10 theme-animate
         ${isDark ? "bg-darkmode text-darkmode" : "bg-lightmode text-lightmode"}
       `}
     >
       {/* ================= Header ================= */}
+
       <div
-        className={`flex items-center justify-between px-4 py-4 border-b mt-14
+        className={`flex items-center justify-between px-4 py-4 border-b
         ${isDark ? "border-white/10" : "border-black/10"}`}
       >
-        <h2 className="text-lg font-bold tracking-wide font-bold">
+
+         {isMobile && (
+          <button
+            onClick={() => navigate(-1)}
+            className="p-2 rounded-lg md:hidden icon-hover"
+          >
+            <ArrowLeft size={20} />
+
+          </button>
+        )}
+
+        <h2 className="text-lg font-bold tracking-wide font-bold mr-auto ">
           Direct Messages
         </h2>
 
-        {isMobile && (
-          <button
-            onClick={() => setShowChatMobile(false)}
-            className="p-2 rounded-lg md:hidden icon-hover"
-          >
-            <X size={20} />
-          </button>
-        )}
+
       </div>
 
       {/* ================= Search ================= */}

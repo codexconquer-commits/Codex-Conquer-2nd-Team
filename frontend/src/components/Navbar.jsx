@@ -43,15 +43,36 @@ const Navbar = () => {
     <div className="relative font-regular">
       {/* Top Navbar */}
       <div
-        className={`fixed top-0 left-0 w-full h-14 z-10
-          flex items-center gap-4 px-6
-          rounded-br-2xl shadow-md backdrop-blur-sm
-          ${isDark ? "bg-black/80 text-white" : "bg-white/90 text-black"}
-          transition-colors duration-300`}
-      >
-        <img src={Logo} alt="Convo Logo" className="w-8 h-8 object-contain" />
-        <h3 className="font-bold text-lg tracking-wide">CONVO</h3>
-      </div>
+  className={`fixed top-0 left-0 w-full h-14 z-10
+    flex items-center justify-between px-4 sm:px-6
+    rounded-br-2xl shadow-md backdrop-blur-sm
+    ${isDark ? "bg-black/80 text-white" : "bg-white/90 text-black"}
+    transition-colors duration-300`}
+>
+  {/* Left: Logo + Brand */}
+  <div className="flex items-center gap-2">
+    <img
+      src={Logo}
+      alt="Convo Logo"
+      className="w-8 h-8 object-contain"
+    />
+    <h3 className="font-bold text-lg tracking-wide">
+      CONVO
+    </h3>
+  </div>
+
+  {/* Right: Theme Toggle */}
+  <button
+    onClick={() => setIsDark(!isDark)}
+    aria-label={`Switch to ${isDark ? "light" : "dark"} mode`}
+    className={`p-2 rounded-lg transition-all duration-300 transform
+      ${isDark ? "hover:bg-white/10" : "hover:bg-gray-100"}
+      focus:outline-none focus:ring-2 focus:ring-blue-400/30
+      hover:scale-110 active:scale-95`}
+  >
+    {isDark ? <Sun size={20} /> : <Moon size={20} />}
+  </button>
+</div>
 
       {/* Left Sidebar - hidden on small screens */}
       <div
@@ -85,17 +106,7 @@ const Navbar = () => {
           </NavLink>
         </aside>
 
-        {/* Theme Toggle */}
-        <button
-          onClick={() => setIsDark(!isDark)}
-          aria-label={`Switch to ${isDark ? "light" : "dark"} mode`}
-          className={`p-2 rounded-lg transition-all duration-300 transform
-            ${isDark ? "hover:bg-white/10" : "hover:bg-gray-100"}
-            focus:outline-none focus:ring-2 focus:ring-blue-400/30
-            hover:scale-110 active:scale-95 mx-auto`}
-        >
-          {isDark ? <Sun size={20} /> : <Moon size={20} />}
-        </button>
+
       </div>
 
       {/* Mobile Bottom Navigation (visible only < md) */}
@@ -138,7 +149,7 @@ const Navbar = () => {
       </nav>
 
       {/* Mobile floating "new" action (+) - bottom-right */}
-     
+
     </div>
   );
 };

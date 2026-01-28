@@ -1,208 +1,63 @@
-import axios from "axios";
-import { useEffect, useRef, useState } from "react";
-import socket from "../../socket/socket.js";
+import { useState } from "react";
 import Navbar from "../../components/Navbar";
-import api from "../../api/axios.js";
-
-
-const BASE = import.meta.env.VITE_BASE_URL;
 
 const Home = () => {
-  const [users, setUsers] = useState([]);
-  const [me, setMe] = useState(null);
-  const [activeChat, setActiveChatx] = useState(null);
-  const [messages, setMessages] = useState([]);
-  const [text, setText] = useState("");
+  const [email, setEmail] = useState("");
+  const [submitted, setSubmitted] = useState(false);
 
-  const isTypingRef = useRef(false);
-const [typingUser, setTypingUser] = useState("");
-
-const typingTimeoutRef = useRef(null);
-
-  /* ================= AUTH USER ================= */
-useEffect(() => {
-  api.get("/api/users/me").then((res) => {
-    setMe(res.data);
-    socket.emit("add-user", res.data._id);
-    console.log("🧑 logged in:", res.data.fullName);
-  });
-}, []);
-
-  /* ================= USERS ================= */
-  useEffect(() => {
-    api.get("/api/users").then((res) => {
-      setUsers(res.data || []);
-    });
-  }, []);
-
-  /* ================= SOCKET LISTENERS ================= */
-  useEffect(() => {
-    socket.on("receive-message", (msg) => {
-      console.log("📩 receive-message", msg);
-      if (activeChat && msg.chatId === activeChat._id) {
-        setMessages((prev) => [...prev, msg]);
-      }
-    });
-
-    socket.on("typing", ({ senderName }) => {
-      console.log("👀 typing:", senderName);
-      setTypingUser(senderName + " is typing...");
-    });
-
-    socket.on("stop-typing", () => {
-      console.log("🛑 stop typing");
-      setTypingUser("");
-    });
-
-    return () => {
-      socket.off("receive-message");
-      socket.off("typing");
-      socket.off("stop-typing");
-    };
-  }, [activeChat]);
-
-  /* ================= OPEN CHAT ================= */
-  const openChat = async (userId) => {
-    const res = await api.post(
-      `/api/chats`,
-      { userId },
-    );
-
-    const chat = res.data;
-    setActiveChat(chat);
-
-    socket.emit("join-chat", chat._id);
-    console.log("📥 joined chat:", chat._id);
-
-    const msgs = await api.get(`/api/messages/${chat._id}`);
-
-    setMessages(msgs.data || []);
-  };
-
-  /* ================= SEND MESSAGE ================= */
-  const sendMessage = async () => {
-    if (!text || !activeChat) return;
-
-    const res = await api.post(
-      `/api/messages`,
-      { chatId: activeChat._id, text }
-    );
-
-    setMessages((prev) => [...prev, res.data]);
-    setText("");
-
-    const receiver = activeChat.members.find(
-      (m) =>
-        (typeof m === "string" ? m : m._id) !==
-        (typeof res.data.senderId === "string"
-          ? res.data.senderId
-          : res.data.senderId._id)
-    );
-
-    const receiverId =
-      typeof receiver === "string" ? receiver : receiver?._id;
-
-    if (receiverId) {
-      socket.emit("send-message", {
-        receiverId,
-        message: res.data,
-      });
-    }
-
-    socket.emit("stop-typing", { chatId: activeChat._id });
-    isTypingRef.current = false;
+  const onSubscribe = (e) => {
+    e.preventDefault();
+    if (!email) return;
+    setSubmitted(true);
+    setEmail("");
+    setTimeout(() => setSubmitted(false), 3000);
   };
 
   return (
-    <div style={{ display: "flex", height: "100vh", fontFamily: "sans-serif" }}>
+    <div className="min-h-screen flex flex-col bg-gradient-to-br from-slate-900 via-slate-900 to-violet-900 text-white">
       <Navbar />
-      {/* USERS */}
-      <div style={{ width: 250, borderRight: "1px solid #ccc" }}>
-        <h3 style={{ padding: 10 }}>Users</h3>
-        {users.map((u) => (
-          <div
-            key={u._id}
-            onClick={() => openChat(u._id)}
-            style={{
-              padding: 10,
-              cursor: "pointer",
-              background: "#f5f5f5",
-              marginBottom: 4,
-            }}
-          >
-            {u.fullName}
+
+      <main className="flex-1 flex items-center justify-center px-6 w-[70vw] m-auto mt-8">
+        <div className="max-w-3xl w-full text-center">
+          {/* Badge */}
+          <div className="inline-block mb-6 px-4 py-1 rounded-full bg-white/10 text-sm text-white/80 backdrop-blur">
+            🚀 Launching Soon
           </div>
-        ))}
-      </div>
 
-      {/* CHAT */}
-      <div style={{ flex: 1, padding: 10 }}>
-        {!activeChat ? (
-          <h2>Select a user to chat</h2>
-        ) : (
-          <>
-            <div style={{ minHeight: 20, color: "gray" }}>
-              {typingUser}
-            </div>
+          {/* Heading */}
+          <h1 className="text-4xl sm:text-5xl font-extrabold tracking-tight mb-4">
+            A Better Way to Chat
+          </h1>
 
-            <div
-              style={{
-                height: "70vh",
-                overflowY: "auto",
-                border: "1px solid #ddd",
-                padding: 10,
-                marginBottom: 10,
-              }}
-            >
-              {messages.map((m) => (
-                <div key={m._id} style={{ marginBottom: 6 }}>
-                  <b>
-                    {m.senderId === me?._id ||
-                    m.senderId?._id === me?._id
-                      ? "You"
-                      : "User"}
-                    :
-                  </b>{" "}
-                  {m.text}
-                </div>
-              ))}
-            </div>
+          {/* Description */}
+          <p className="text-lg text-white/75 max-w-2xl mx-auto mb-10">
+            Convo is coming with secure real-time chat, audio & video calls, and
+            smooth group conversations — built for speed and simplicity.
+          </p>
 
-            <textarea
-              value={text}
-              placeholder="Type message..."
-              style={{ width: "100%", height: 60 }}
-              onChange={(e) => {
-                setText(e.target.value);
+          {/* Features */}
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-12">
+            {[
+              "End-to-end encryption",
+              "Audio & video calls",
+              "Fast & responsive UI",
+            ].map((item) => (
+              <div
+                key={item}
+                className="rounded-xl bg-white/5 border border-white/10 p-4 text-white/80"
+              >
+                {item}
+              </div>
+            ))}
+          </div>
 
-                if (!activeChat) return;
 
-                if (!isTypingRef.current) {
-                  socket.emit("typing", {
-                    chatId: activeChat._id,
-                    senderName: me.fullName,
-                  });
-                  console.log("⌨️ typing emit");
-                  isTypingRef.current = true;
-                }
+        </div>
+      </main>
 
-                clearTimeout(typingTimeoutRef.current);
-                typingTimeoutRef.current = setTimeout(() => {
-                  socket.emit("stop-typing", {
-                    chatId: activeChat._id,
-                  });
-                  console.log("🛑 stop typing emit");
-                  isTypingRef.current = false;
-                }, 2000);
-              }}
-            />
-
-            <button onClick={sendMessage} style={{ marginTop: 8 }}>
-              Send
-            </button>
-          </>
-        )}
-      </div> 
+      <footer className="py-6 text-center text-white/50 text-sm border-t border-white/5">
+        © {new Date().getFullYear()} Codex-Conquer · MERN & WebRTC
+      </footer>
     </div>
   );
 };

@@ -1,16 +1,17 @@
 import {
-  UsersRound,
   House,
   MessageCircle,
   Moon,
   Phone,
+  Plus,
   Sun,
   User,
+  UsersRound,
 } from "lucide-react";
 import { useContext } from "react";
 import { NavLink } from "react-router-dom";
-import { AppContext } from "../context/Theme-Context.js";
 import Logo from "../assets/download-removebg-preview.png";
+import { AppContext } from "../context/Theme-Context.js";
 
 const Navbar = () => {
   const { isDark, setIsDark } = useContext(AppContext);
@@ -28,6 +29,16 @@ const Navbar = () => {
      }
      focus:outline-none focus:ring-2 focus:ring-blue-400/30`;
 
+  // Mobile nav class generator for NavLink
+  const mobileNavClass = ({ isActive }) =>
+    `p-2 rounded-lg transition-all duration-200 transform flex items-center justify-center
+     ${
+       isActive
+         ? "text-blue-500 scale-110"
+         : "text-gray-400 hover:text-gray-700"
+     }
+     `;
+
   return (
     <div className="relative font-regular">
       {/* Top Navbar */}
@@ -42,14 +53,15 @@ const Navbar = () => {
         <h3 className="font-bold text-lg tracking-wide">CONVO</h3>
       </div>
 
-      {/* Sidebar */}
+      {/* Left Sidebar - hidden on small screens */}
       <div
         className={`fixed top-14 left-0 h-[calc(100vh-3.5rem)] w-16
           py-6 flex flex-col justify-between
           ${isDark ? "bg-black/80 text-white" : "bg-white/90 text-black"}
           border-r border-white/10
           backdrop-blur-sm shadow-md
-          transition-colors duration-300`}
+          transition-colors duration-300
+          hidden md:flex`}
       >
         <aside className="flex flex-col items-center gap-4">
           <NavLink to="/" className={navClass} aria-label="Home">
@@ -85,6 +97,48 @@ const Navbar = () => {
           {isDark ? <Sun size={20} /> : <Moon size={20} />}
         </button>
       </div>
+
+      {/* Mobile Bottom Navigation (visible only < md) */}
+      <nav
+        className={`fixed left-1/2 bottom-4 z-50 transform -translate-x-1/2 px-3 py-2 rounded-full
+          ${isDark ? "bg-black/60 text-white" : "bg-white/90 text-black"}
+          backdrop-blur-md shadow-lg md:hidden`}
+        role="navigation"
+        aria-label="Mobile navigation"
+      >
+        <div className="flex items-center gap-4">
+          <NavLink to="/" className={mobileNavClass} aria-label="Home">
+            <House size={20} />
+          </NavLink>
+
+          <NavLink
+            to="/messages"
+            className={mobileNavClass}
+            aria-label="Messages"
+          >
+            <MessageCircle size={20} />
+          </NavLink>
+
+          <NavLink to="/groups" className={mobileNavClass} aria-label="Groups">
+            <UsersRound size={20} />
+          </NavLink>
+
+          <NavLink to="/calls" className={mobileNavClass} aria-label="Calls">
+            <Phone size={20} />
+          </NavLink>
+
+          <NavLink
+            to="/profile"
+            className={mobileNavClass}
+            aria-label="Profile"
+          >
+            <User size={20} />
+          </NavLink>
+        </div>
+      </nav>
+
+      {/* Mobile floating "new" action (+) - bottom-right */}
+     
     </div>
   );
 };

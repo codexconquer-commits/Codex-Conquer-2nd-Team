@@ -1,7 +1,7 @@
 import { ArrowLeft, Check, Loader, Mic, Plus, Search } from "lucide-react";
 import { useEffect, useState } from "react";
 import api from "../../../api/axios";
-
+import { useNavigate } from "react-router";
 
 const BASE = import.meta.env.VITE_BASE_URL;
 
@@ -15,6 +15,7 @@ const ChatSidebar = ({
   setIsGroupInfoOpen,
   setGroups = () => {},
 }) => {
+  const navigate = useNavigate();
   const [addPeople, setAddPeople] = useState(false);
   const [users, setUsers] = useState([]);
   const [groupName, setGroupName] = useState("");

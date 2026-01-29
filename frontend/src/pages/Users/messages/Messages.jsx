@@ -6,37 +6,26 @@ import socket from "../../../socket/socket.js";
 
 import api from "../../../api/axios";
 import AudioCall from "./AudioCall.jsx";
+import VideoCall from "./VideoCall.jsx";
 import ChatHeader from "./ChatHeader";
 import ChatInput from "./ChatInput";
 import ChatMessages from "./ChatMessages";
 import ChatSidebar from "./ChatSidebar";
 import useMessagesSocket from "./useMessagesSocket";
+import useAudio from "./useAudioCall.js";
 
-// ================= GLOBAL REFS =================
-let peerConnection;
-let localStream;
-let remoteAudioEl;
-
-const RTC_CONFIG = {
-  iceServers: [{ urls: "stun:stun.l.google.com:19302" }],
-};
 
 const BASE = import.meta.env.VITE_BASE_URL;
 
 const Messages = () => {
   const { isDark, user } = useContext(AppContext);
-  const [isCallOpen, setIsCallOpen] = useState(false);
-  const [callerName, setCallerName] = useState("User");
-  const [callRemoteUser, setCallRemoteUser] = useState(null);
-  const [isCallConnected, setIsCallConnected] = useState(false);
-  const [incomingCallData, setIncomingCallData] = useState(null);
-  const [isMuted, setIsMuted] = useState(false);
-
   const [users, setUsers] = useState([]);
   const [activeChat, setActiveChat] = useState(null);
   const [messages, setMessages] = useState([]);
   const [text, setText] = useState("");
   const [me, setMe] = useState(null);
+  const audio = useAudio(me);
+
   const [onlineUsers, setOnlineUsers] = useState([]);
   const [typingUser, setTypingUser] = useState("");
 
@@ -121,300 +110,8 @@ const Messages = () => {
     });
   };
 
-  /* ================= AUDIO HELPERS ================= */
 
-  const attachRemoteAudio = (stream) => {
-    if (!remoteAudioEl) {
-      remoteAudioEl = document.createElement("audio");
-      remoteAudioEl.autoplay = true;
-      remoteAudioEl.playsInline = true;
-      remoteAudioEl.muted = false;
-      document.body.appendChild(remoteAudioEl);
-    }
 
-    remoteAudioEl.srcObject = stream;
-
-    remoteAudioEl.play().catch((err) => {
-      console.log("🔇 Audio play blocked:", err);
-    });
-  };
-
-  const cleanupAudioCall = () => {
-    // ✅ Stop local tracks
-    if (localStream) {
-      localStream.getTracks().forEach((track) => {
-        track.stop();
-      });
-      localStream = null;
-    }
-
-    // ✅ Stop remote audio
-    if (remoteAudioEl) {
-      remoteAudioEl.srcObject = null;
-      if (document.body.contains(remoteAudioEl)) {
-        document.body.removeChild(remoteAudioEl);
-      }
-      remoteAudioEl = null;
-    }
-
-    // ✅ Close peer connection
-    if (peerConnection) {
-      peerConnection.close();
-      peerConnection = null;
-    }
-
-    // ✅ Reset state
-    setIsCallConnected(false);
-    setCallRemoteUser(null);
-    setIncomingCallData(null);
-    setIsMuted(false);
-  };
-
-  const endAudioCall = () => {
-    // ✅ Notify remote user
-    if (callRemoteUser) {
-      socket.emit("end-call", {
-        toUserId: callRemoteUser._id,
-      });
-    }
-
-    // ✅ Cleanup
-    cleanupAudioCall();
-    setIsCallOpen(false);
-  };
-
-  /* ================= MUTE / UNMUTE HANDLERS ================= */
-
-  const handleMuteToggle = (muteState) => {
-    // ✅ Disable/enable audio track
-    if (localStream) {
-      const audioTrack = localStream.getAudioTracks()[0];
-      if (audioTrack) {
-        audioTrack.enabled = !muteState;
-        setIsMuted(muteState);
-        console.log(muteState ? "🔇 Muted" : "🎤 Unmuted");
-      }
-    }
-  };
-
-  /* ================= START AUDIO CALL ================= */
-
-  const startAudioCall = async () => {
-    if (!activeChat || !me) return;
-
-    const otherUser = activeChat.members.find((m) => m._id !== me._id);
-    if (!otherUser) return;
-
-    try {
-      // ✅ Get local audio
-      localStream = await navigator.mediaDevices.getUserMedia({
-        audio: true,
-      });
-
-      // ✅ Create peer connection
-      peerConnection = new RTCPeerConnection(RTC_CONFIG);
-
-      // ✅ Add tracks to peer connection
-      localStream.getTracks().forEach((track) => {
-        peerConnection.addTrack(track, localStream);
-      });
-
-      // ✅ Handle ICE candidates
-      peerConnection.onicecandidate = (e) => {
-        if (e.candidate) {
-          socket.emit("ice-candidate", {
-            toUserId: otherUser._id,
-            candidate: e.candidate,
-          });
-        }
-      };
-
-      // ✅ Handle remote track
-      peerConnection.ontrack = (e) => {
-        const stream = e.streams[0];
-        stream.getAudioTracks().forEach((track) => {
-          track.enabled = true;
-        });
-        attachRemoteAudio(stream);
-      };
-
-      // ✅ Create and send offer
-      const offer = await peerConnection.createOffer();
-      await peerConnection.setLocalDescription(offer);
-
-      setCallerName(otherUser.fullName);
-      setCallRemoteUser(otherUser);
-      setIsCallOpen(true);
-
-      socket.emit("call-user", {
-        toUserId: otherUser._id,
-        offer,
-        fromUser: {
-          _id: me._id,
-          fullName: me.fullName,
-        },
-      });
-
-      console.log("📞 Calling...");
-    } catch (error) {
-      console.error("❌ Failed to start call:", error);
-      cleanupAudioCall();
-    }
-  };
-
-  /* ================= ACCEPT INCOMING CALL ================= */
-
-  const handleAcceptCall = async () => {
-    if (!incomingCallData || !me) return;
-
-    const { offer, fromUser } = incomingCallData;
-
-    try {
-      // ✅ Get local audio
-      localStream = await navigator.mediaDevices.getUserMedia({
-        audio: true,
-      });
-
-      // ✅ Create peer connection
-      peerConnection = new RTCPeerConnection(RTC_CONFIG);
-
-      // ✅ Add tracks
-      localStream.getTracks().forEach((track) => {
-        peerConnection.addTrack(track, localStream);
-      });
-
-      // ✅ Handle remote track
-      peerConnection.ontrack = (e) => {
-        const stream = e.streams[0];
-        stream.getAudioTracks().forEach((track) => {
-          track.enabled = true;
-        });
-        attachRemoteAudio(stream);
-      };
-
-      // ✅ Handle ICE candidates
-      peerConnection.onicecandidate = (e) => {
-        if (e.candidate) {
-          socket.emit("ice-candidate", {
-            toUserId: fromUser._id,
-            candidate: e.candidate,
-          });
-        }
-      };
-
-      // ✅ Set remote description and create answer
-      await peerConnection.setRemoteDescription(offer);
-      const answer = await peerConnection.createAnswer();
-      await peerConnection.setLocalDescription(answer);
-
-      // ✅ Send answer
-      socket.emit("accept-call", {
-        toUserId: fromUser._id,
-        answer,
-      });
-
-      setIsCallConnected(true);
-      setIncomingCallData(null);
-
-      console.log("✅ Call accepted");
-    } catch (error) {
-      console.error("❌ Failed to accept call:", error);
-      cleanupAudioCall();
-    }
-  };
-
-  /* ================= REJECT INCOMING CALL ================= */
-
-  const handleRejectCall = () => {
-    if (!incomingCallData) return;
-
-    const { fromUser } = incomingCallData;
-
-    // ✅ Notify caller
-    socket.emit("call-rejected", {
-      toUserId: fromUser._id,
-    });
-
-    // ✅ Cleanup
-    cleanupAudioCall();
-    setIsCallOpen(false);
-  };
-
-  /* ================= WEBRTC SOCKET LISTENERS ================= */
-
-  useEffect(() => {
-    // ================= INCOMING CALL =================
-    const handleIncomingCall = async ({ offer, fromUser }) => {
-      console.log("📞 Incoming call from", fromUser.fullName);
-
-      setCallerName(fromUser.fullName);
-      setCallRemoteUser(fromUser);
-      setIncomingCallData({ offer, fromUser });
-      setIsCallOpen(true);
-    };
-
-    // ================= CALL ACCEPTED =================
-    const handleCallAccepted = async ({ answer }) => {
-      try {
-        if (peerConnection) {
-          await peerConnection.setRemoteDescription(answer);
-          setIsCallConnected(true);
-          console.log("✅ Call connected");
-        }
-      } catch (error) {
-        console.error("❌ Failed to set remote description:", error);
-      }
-    };
-
-    // ================= ICE CANDIDATE =================
-    const handleIceCandidate = async ({ candidate }) => {
-      try {
-        if (candidate && peerConnection) {
-          await peerConnection.addIceCandidate(candidate);
-        }
-      } catch (error) {
-        console.error("❌ Failed to add ICE candidate:", error);
-      }
-    };
-
-    // ================= CALL REJECTED =================
-    const handleCallRejected = () => {
-      console.log("❌ Call rejected");
-      cleanupAudioCall();
-      setIsCallOpen(false);
-    };
-
-    // ================= CALL ENDED =================
-    const handleCallEnded = () => {
-      console.log("📞 Call ended");
-      cleanupAudioCall();
-      setIsCallOpen(false);
-    };
-
-    // ================= REGISTER LISTENERS =================
-    socket.on("incoming-call", handleIncomingCall);
-    socket.on("call-accepted", handleCallAccepted);
-    socket.on("ice-candidate", handleIceCandidate);
-    socket.on("call-rejected", handleCallRejected);
-    socket.on("call-ended", handleCallEnded);
-
-    // ================= CLEANUP =================
-    return () => {
-      socket.off("incoming-call", handleIncomingCall);
-      socket.off("call-accepted", handleCallAccepted);
-      socket.off("ice-candidate", handleIceCandidate);
-      socket.off("call-rejected", handleCallRejected);
-      socket.off("call-ended", handleCallEnded);
-    };
-  }, [incomingCallData, isCallConnected, me]);
-
-  /* ================= CLEANUP ON UNMOUNT =================*/
-
-  useEffect(() => {
-    return () => {
-      cleanupAudioCall();
-    };
-  }, []);
 
   /* ================= RENDER ================= */
 
@@ -471,11 +168,16 @@ const Messages = () => {
         ) : (
           <>
             <ChatHeader
-              onCall={startAudioCall}
+              onCall={() => {
+                if (!activeChat || !me) return;
+                const otherUser = activeChat.members.find(
+                  (m) => m._id !== me._id
+                );
+                if (otherUser) audio.startAudioCall(otherUser);
+              }}
               activeChat={activeChat}
               me={me}
               onlineUsers={onlineUsers}
-              isCallOpen={isCallOpen}
               isMobile={isMobile}
               onBack={() => {
                 setShowChatMobile(false);
@@ -485,17 +187,17 @@ const Messages = () => {
 
             {/* 🔥 Audio Call Popup */}
             <AudioCall
-              open={isCallOpen}
-              isConnected={isCallConnected}
-              callerName={callerName}
-              callerAvatar={callerName?.[0]?.toUpperCase() || "U"}
-              isCalling={!isCallConnected && !!callRemoteUser}
-              onClose={endAudioCall}
-              isMuted={isMuted}
-              onMuteToggle={handleMuteToggle}
-              onAccept={handleAcceptCall}
-              onReject={handleRejectCall}
-              isIncoming={!!incomingCallData}
+              open={audio.isCallOpen}
+              isConnected={audio.isCallConnected}
+              callerName={audio.caller?.fullName || "User"}
+              callerAvatar={audio.caller?.fullName?.[0] || "U"}
+              isCalling={!audio.isCallConnected && !!audio.caller}
+              isIncoming={!!audio.incomingCall}
+              isMuted={audio.isMuted}
+              onAccept={audio.acceptAudioCall}
+              onReject={audio.rejectAudioCall}
+              onClose={audio.endAudioCall}
+              onMuteToggle={audio.toggleMute}
             />
 
             <ChatMessages

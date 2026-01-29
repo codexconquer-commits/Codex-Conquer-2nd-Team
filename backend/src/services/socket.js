@@ -87,6 +87,14 @@ socket.on("ice-candidate", ({ toUserId, candidate }) => {
     });
   }
 });
+
+// 🛑 END CALL
+socket.on("end-call", ({ toUserId }) => {
+  const targetSocketId = onlineUsers.get(toUserId);
+  if (targetSocketId) {
+    io.to(targetSocketId).emit("call-ended");
+  }
+});
 });
 };
 

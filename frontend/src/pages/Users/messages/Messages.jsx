@@ -262,6 +262,84 @@ const Messages = () => {
     }
   };
 
+  /* ================= ACCEPT INCOMING CALL ================= */
+
+  const handleAcceptCall = async () => {
+    if (!incomingCallData || !me) return;
+
+    const { offer, fromUser } = incomingCallData;
+
+    try {
+      // ✅ Get local audio
+      localStream = await navigator.mediaDevices.getUserMedia({
+        audio: true,
+      });
+
+      // ✅ Create peer connection
+      peerConnection = new RTCPeerConnection(RTC_CONFIG);
+
+      // ✅ Add tracks
+      localStream.getTracks().forEach((track) => {
+        peerConnection.addTrack(track, localStream);
+      });
+
+      // ✅ Handle remote track
+      peerConnection.ontrack = (e) => {
+        const stream = e.streams[0];
+        stream.getAudioTracks().forEach((track) => {
+          track.enabled = true;
+        });
+        attachRemoteAudio(stream);
+      };
+
+      // ✅ Handle ICE candidates
+      peerConnection.onicecandidate = (e) => {
+        if (e.candidate) {
+          socket.emit("ice-candidate", {
+            toUserId: fromUser._id,
+            candidate: e.candidate,
+          });
+        }
+      };
+
+      // ✅ Set remote description and create answer
+      await peerConnection.setRemoteDescription(offer);
+      const answer = await peerConnection.createAnswer();
+      await peerConnection.setLocalDescription(answer);
+
+      // ✅ Send answer
+      socket.emit("accept-call", {
+        toUserId: fromUser._id,
+        answer,
+      });
+
+      setIsCallConnected(true);
+      setIncomingCallData(null);
+
+      console.log("✅ Call accepted");
+    } catch (error) {
+      console.error("❌ Failed to accept call:", error);
+      cleanupAudioCall();
+    }
+  };
+
+  /* ================= REJECT INCOMING CALL ================= */
+
+  const handleRejectCall = () => {
+    if (!incomingCallData) return;
+
+    const { fromUser } = incomingCallData;
+
+    // ✅ Notify caller
+    socket.emit("call-rejected", {
+      toUserId: fromUser._id,
+    });
+
+    // ✅ Cleanup
+    cleanupAudioCall();
+    setIsCallOpen(false);
+  };
+
   /* ================= WEBRTC SOCKET LISTENERS ================= */
 
   useEffect(() => {
@@ -274,71 +352,6 @@ const Messages = () => {
       setIncomingCallData({ offer, fromUser });
       setIsCallOpen(true);
     };
-
-    // ================= AUTO ACCEPT & ANSWER =================
-    const acceptIncomingCall = async () => {
-      if (!incomingCallData || !me) return;
-
-      const { offer, fromUser } = incomingCallData;
-
-      try {
-        // ✅ Get local audio
-        localStream = await navigator.mediaDevices.getUserMedia({
-          audio: true,
-        });
-
-        // ✅ Create peer connection
-        peerConnection = new RTCPeerConnection(RTC_CONFIG);
-
-        // ✅ Add tracks
-        localStream.getTracks().forEach((track) => {
-          peerConnection.addTrack(track, localStream);
-        });
-
-        // ✅ Handle remote track
-        peerConnection.ontrack = (e) => {
-          const stream = e.streams[0];
-          stream.getAudioTracks().forEach((track) => {
-            track.enabled = true;
-          });
-          attachRemoteAudio(stream);
-        };
-
-        // ✅ Handle ICE candidates
-        peerConnection.onicecandidate = (e) => {
-          if (e.candidate) {
-            socket.emit("ice-candidate", {
-              toUserId: fromUser._id,
-              candidate: e.candidate,
-            });
-          }
-        };
-
-        // ✅ Set remote description and create answer
-        await peerConnection.setRemoteDescription(offer);
-        const answer = await peerConnection.createAnswer();
-        await peerConnection.setLocalDescription(answer);
-
-        // ✅ Send answer
-        socket.emit("accept-call", {
-          toUserId: fromUser._id,
-          answer,
-        });
-
-        setIsCallConnected(true);
-        setIncomingCallData(null);
-
-        console.log("✅ Call accepted");
-      } catch (error) {
-        console.error("❌ Failed to accept call:", error);
-        cleanupAudioCall();
-      }
-    };
-
-    // ✅ Auto-accept when AudioCall opens with incoming call data
-    if (isCallOpen && incomingCallData && !isCallConnected) {
-      acceptIncomingCall();
-    }
 
     // ================= CALL ACCEPTED =================
     const handleCallAccepted = async ({ answer }) => {
@@ -393,7 +406,7 @@ const Messages = () => {
       socket.off("call-rejected", handleCallRejected);
       socket.off("call-ended", handleCallEnded);
     };
-  }, [isCallOpen, incomingCallData, isCallConnected, me]);
+  }, [incomingCallData, isCallConnected, me]);
 
   /* ================= CLEANUP ON UNMOUNT =================*/
 
@@ -480,6 +493,9 @@ const Messages = () => {
               onClose={endAudioCall}
               isMuted={isMuted}
               onMuteToggle={handleMuteToggle}
+              onAccept={handleAcceptCall}
+              onReject={handleRejectCall}
+              isIncoming={!!incomingCallData}
             />
 
             <ChatMessages

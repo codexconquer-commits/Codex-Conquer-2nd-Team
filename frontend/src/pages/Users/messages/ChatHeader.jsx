@@ -7,23 +7,17 @@ const ChatHeader = ({
   isMobile,
   onBack,
   onCall,
+  onVideoCall,
 }) => {
-  const otherUser = activeChat?.members?.find(
-    (m) => m._id !== me?._id
-  );
+  const otherUser = activeChat?.members?.find((m) => m._id !== me?._id);
 
-  const isActiveUserOnline = onlineUsers.includes(
-    otherUser?._id?.toString()
-  );
+  const isActiveUserOnline = onlineUsers.includes(otherUser?._id?.toString());
 
   return (
     <div className="sticky top-0 z-50 h-14 backdrop-blur-xl flex items-center px-4 border-b border-white/10">
       <div className="flex items-center w-full">
         {isMobile && (
-          <button
-            className="p-2 rounded-xl bg-white/10"
-            onClick={onBack}
-          >
+          <button className="p-2 rounded-xl bg-white/10" onClick={onBack}>
             <ArrowLeft />
           </button>
         )}
@@ -48,7 +42,18 @@ const ChatHeader = ({
             className="cursor-pointer hover:text-green-500"
             onClick={onCall}
           />
-          <Video className="opacity-40 cursor-not-allowed" />
+          <Video
+  className={`${
+    isActiveUserOnline
+      ? "cursor-pointer hover:text-blue-500"
+      : "opacity-40 cursor-not-allowed"
+  }`}
+  onClick={() => {
+    if (isActiveUserOnline && onVideoCall) {
+        onVideoCall();
+      }
+  }}
+/>
         </div>
       </div>
     </div>

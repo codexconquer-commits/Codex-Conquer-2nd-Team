@@ -95,6 +95,56 @@ socket.on("end-call", ({ toUserId }) => {
     io.to(targetSocketId).emit("call-ended");
   }
 });
+
+
+
+// 📹 VIDEO CALL - CALL USER
+socket.on("call-user-video", ({ toUserId, offer, fromUser }) => {
+  const targetSocketId = onlineUsers.get(toUserId);
+  if (targetSocketId) {
+    io.to(targetSocketId).emit("incoming-video-call", {
+      offer,
+      fromUser,
+    });
+  }
+});
+
+// ✅ VIDEO CALL ACCEPTED
+socket.on("accept-video-call", ({ toUserId, answer }) => {
+  const targetSocketId = onlineUsers.get(toUserId);
+  if (targetSocketId) {
+    io.to(targetSocketId).emit("video-call-accepted", {
+      answer,
+    });
+  }
+});
+
+// ❌ VIDEO CALL REJECTED
+socket.on("reject-video-call", ({ toUserId }) => {
+  const targetSocketId = onlineUsers.get(toUserId);
+  if (targetSocketId) {
+    io.to(targetSocketId).emit("video-call-rejected");
+  }
+});
+
+// 🌐 VIDEO ICE CANDIDATE
+socket.on("video-ice-candidate", ({ toUserId, candidate }) => {
+  const targetSocketId = onlineUsers.get(toUserId);
+  if (targetSocketId) {
+    io.to(targetSocketId).emit("video-ice-candidate", {
+      candidate,
+    });
+  }
+});
+
+// 🛑 END VIDEO CALL
+socket.on("end-video-call", ({ toUserId }) => {
+  const targetSocketId = onlineUsers.get(toUserId);
+  if (targetSocketId) {
+    io.to(targetSocketId).emit("video-call-ended");
+  }
+});
+
 });
 };
 

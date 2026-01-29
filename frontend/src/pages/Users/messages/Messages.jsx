@@ -6,13 +6,14 @@ import socket from "../../../socket/socket.js";
 
 import api from "../../../api/axios";
 import AudioCall from "./AudioCall.jsx";
-import VideoCall from "./VideoCall.jsx";
 import ChatHeader from "./ChatHeader";
 import ChatInput from "./ChatInput";
 import ChatMessages from "./ChatMessages";
 import ChatSidebar from "./ChatSidebar";
 import useMessagesSocket from "./useMessagesSocket";
 import useAudio from "./useAudioCall.js";
+import useVideoCall from "./useVideoCall.js";
+import VideoCall from "./VideoCall.jsx";
 
 
 const BASE = import.meta.env.VITE_BASE_URL;
@@ -25,6 +26,9 @@ const Messages = () => {
   const [text, setText] = useState("");
   const [me, setMe] = useState(null);
   const audio = useAudio(me);
+const video = useVideoCall(me);
+const remoteVideoRef = useRef(null);
+const [localVideoStream, setLocalVideoStream] = useState(null);
 
   const [onlineUsers, setOnlineUsers] = useState([]);
   const [typingUser, setTypingUser] = useState("");
@@ -168,22 +172,35 @@ const Messages = () => {
         ) : (
           <>
             <ChatHeader
-              onCall={() => {
-                if (!activeChat || !me) return;
-                const otherUser = activeChat.members.find(
-                  (m) => m._id !== me._id
-                );
-                if (otherUser) audio.startAudioCall(otherUser);
-              }}
-              activeChat={activeChat}
-              me={me}
-              onlineUsers={onlineUsers}
-              isMobile={isMobile}
-              onBack={() => {
-                setShowChatMobile(false);
-                setActiveChat(null);
-              }}
-            />
+  onCall={() => {
+    const otherUser = activeChat.members.find(
+      (m) => m._id !== me._id
+    );
+    if (otherUser) audio.startAudioCall(otherUser);
+  }}
+
+  onVideoCall={async () => {
+    const otherUser = activeChat.members.find(
+      (m) => m._id !== me._id
+    );
+    if (otherUser) {
+      const stream = await video.startVideoCall(
+        otherUser,
+        remoteVideoRef.current
+      );
+      setLocalVideoStream(stream);
+    }
+  }}
+
+  activeChat={activeChat}
+  me={me}
+  onlineUsers={onlineUsers}
+  isMobile={isMobile}
+  onBack={() => {
+    setShowChatMobile(false);
+    setActiveChat(null);
+  }}
+/>
 
             {/* 🔥 Audio Call Popup */}
             <AudioCall
@@ -199,6 +216,25 @@ const Messages = () => {
               onClose={audio.endAudioCall}
               onMuteToggle={audio.toggleMute}
             />
+
+            <VideoCall
+  open={video.isCallOpen}
+  isConnected={video.isCallConnected}
+  callerName={video.caller?.fullName || "User"}
+  isIncoming={!!video.incomingCall}
+  isMuted={video.isMuted}
+  isCameraOff={video.isCameraOff}
+  localStream={localVideoStream}
+  remoteVideoRef={remoteVideoRef}
+  onAccept={async () => {
+    const stream = await video.acceptVideoCall(remoteVideoRef.current);
+    setLocalVideoStream(stream);
+  }}
+  onReject={video.endVideoCall}
+  onEnd={video.endVideoCall}
+  onMuteToggle={video.toggleMute}
+  onCameraToggle={video.toggleCamera}
+/>
 
             <ChatMessages
               messages={messages}

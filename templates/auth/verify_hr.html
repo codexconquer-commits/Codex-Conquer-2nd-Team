@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Verify HR Access</title>
+    <style>
+        body { font-family: Arial; background: #f4f6f8; }
+        .box {
+            width: 400px;
+            margin: 100px auto;
+            background: white;
+            padding: 25px;
+            border-radius: 8px;
+            box-shadow: 0 0 10px rgba(0,0,0,0.1);
+        }
+        input, button {
+            width: 100%;
+            padding: 10px;
+            margin-top: 12px;
+        }
+        button {
+            background: #28a745;
+            color: white;
+            border: none;
+        }
+    </style>
+</head>
+<body>
+
+<div class="box">
+    <h2>Verify HR Access</h2>
+
+    <form method="post">
+        <input type="email" name="email" placeholder="Registered Email" required>
+        <input type="text" name="code" placeholder="6-digit Verification Code" required>
+        <input type="password" name="password" placeholder="Create Password" required>
+        <input type="password" name="confirm_password" placeholder="Confirm Password" required>
+        <button type="submit">Create Account</button>
+    </form>
+</div>
+<hr>
+
+<form method="post" action="{{ url_for('resend_hr_code') }}">
+    <input type="email" name="email" placeholder="Registered Company Email" required>
+    <button type="submit">Resend Verification Code</button>
+</form>
+
+
+</body>
+</html>

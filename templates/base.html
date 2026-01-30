@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>{% block title %}HR Letters{% endblock %}</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <style>
+        body {
+            margin: 0;
+            font-family: Arial, sans-serif;
+            background: #f8fafc;
+        }
+
+        .layout {
+            display: flex;
+            min-height: 100vh;
+        }
+
+        /* SIDEBAR */
+        .sidebar {
+            width: 240px;
+            background: #ffffff;
+            border-right: 1px solid #e5e7eb;
+            padding: 20px;
+        }
+
+        .sidebar h3 {
+            margin-bottom: 30px;
+            font-size: 18px;
+        }
+
+        .nav a {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 10px 12px;
+            margin-bottom: 6px;
+            border-radius: 8px;
+            color: #374151;
+            text-decoration: none;
+            font-size: 14px;
+        }
+
+        .nav a:hover,
+        .nav a.active {
+            background: #eef2ff;
+            color: #2563eb;
+        }
+
+        /* MAIN CONTENT */
+        .content {
+            flex: 1;
+            padding: 20px 30px;
+        }
+
+        /* TOP BAR */
+        .topbar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        .user {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 14px;
+        }
+
+        .avatar {
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            background: #2563eb;
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+
+<div class="layout">
+
+    <!-- LEFT SIDEBAR -->
+    <div class="sidebar">
+        <h3>HR Letters</h3>
+
+        <div class="nav">
+            <a href="{{ url_for('dashboard') }}">🏠 Dashboard</a>
+            <a href="{{ url_for('letter_history') }}">📄 Letter History</a>
+            <a href="{{ url_for('drafts') }}">📝 Drafts</a>
+            <a href="{{ url_for('add_employee') }}">➕ Add Employee</a>
+            <a href="{{ url_for('hr_requests') }}">🛂 HR Requests</a>
+        </div>
+
+        <hr>
+
+        <div class="nav">
+            <a href="{{ url_for('system_settings') }}">⚙️ System Settings</a>
+            <a href="{{ url_for('manage_profile_page') }}">👤 Manage Profile</a>
+            <a href="{{ url_for('logout') }}">🚪 Logout</a>
+        </div>
+    </div>
+
+    <!-- RIGHT CONTENT -->
+    <div class="content">
+
+        <!-- TOP BAR -->
+        <div class="topbar">
+            <div></div>
+            <div class="user">
+                <div class="avatar">H</div>
+                <div>HR</div>
+            </div>
+        </div>
+
+        {% block content %}{% endblock %}
+
+    </div>
+
+</div>
+
+</body>
+</html>

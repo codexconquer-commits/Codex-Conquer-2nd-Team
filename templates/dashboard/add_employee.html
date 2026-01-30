@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Add Employee</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <style>
+        body {
+            font-family: Arial;
+            background: #f4f6f8;
+        }
+        .box {
+            width: 450px;
+            margin: 60px auto;
+            background: white;
+            padding: 25px;
+            border-radius: 8px;
+            box-shadow: 0 0 10px rgba(0,0,0,0.1);
+        }
+        h2 {
+            text-align: center;
+        }
+        input, button {
+            width: 100%;
+            padding: 10px;
+            margin-top: 10px;
+        }
+        button {
+            background: #28a745;
+            color: white;
+            border: none;
+        }
+    </style>
+</head>
+<body>
+
+<div class="box">
+    <h2>Add Employee</h2>
+    <form method="post">
+        <input type="text" name="name" placeholder="Employee Name" required>
+        <input type="text" name="designation" placeholder="Designation" required>
+        <input type="date" name="joining_date" required>
+        <input type="email" name="email" placeholder="Email" required>
+        <button type="submit">Save Employee</button>
+    </form>
+</div>
+
+</body>
+</html>

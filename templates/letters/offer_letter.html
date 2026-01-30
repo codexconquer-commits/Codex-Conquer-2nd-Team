@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Offer Letter</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <style>
+        body {
+            font-family: Arial;
+            margin: 50px;
+            line-height: 1.6;
+        }
+        .header {
+            text-align: center;
+            font-size: 22px;
+            font-weight: bold;
+        }
+        .content {
+            margin-top: 40px;
+        }
+    </style>
+</head>
+<body>
+
+<div class="header">
+    OFFER LETTER
+</div>
+
+<div class="content">
+    <p>Date: {{ today }}</p>
+
+    <p>Dear <b>{{ name }}</b>,</p>
+
+    <p>
+        We are pleased to offer you the position of <b>{{ designation }}</b>
+        at our organization.
+    </p>
+
+    <p>
+        Your joining date will be <b>{{ joining_date }}</b>.
+    </p>
+
+    <p>
+        We look forward to having you as part of our team and
+        believe your skills will be a valuable addition to our company.
+    </p>
+
+    <p>
+        Sincerely,<br>
+        HR Department
+    </p>
+</div>
+
+</body>
+</html>

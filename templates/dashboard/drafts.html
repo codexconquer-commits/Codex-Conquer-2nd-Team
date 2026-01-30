@@ -1,0 +1,261 @@
+
+<!--
+<style>
+.container { max-width: 1000px; margin:auto; }
+
+.type-cards {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(180px,1fr));
+    gap: 14px;
+    margin: 20px 0 30px;
+}
+
+.type-card {
+    background: white;
+    padding: 16px;
+    border-radius: 12px;
+    cursor: pointer;
+    box-shadow: 0 6px 16px rgba(0,0,0,0.06);
+    border: 2px solid transparent;
+    transition: all .2s ease;
+}
+
+.type-card:hover { transform: translateY(-2px); }
+
+.type-card.active {
+    border-color: #2563eb;
+    background: #eef2ff;
+}
+
+.type-card h4 { margin: 0; font-size: 15px; }
+.type-card p { margin: 6px 0 0; font-size: 13px; color:#6b7280; }
+
+.draft-card {
+    background: white;
+    border-radius: 12px;
+    padding: 16px 18px;
+    margin-bottom: 14px;
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    box-shadow: 0 6px 16px rgba(0,0,0,0.05);
+}
+
+.draft-info h4 { margin:0; font-size:15px; }
+.draft-info p { margin:4px 0; font-size:13px; color:#6b7280; }
+
+.resume a {
+    text-decoration:none;
+    background:#2563eb;
+    color:white;
+    padding:8px 14px;
+    border-radius:6px;
+    font-size:14px;
+}
+
+.empty {
+    background:white;
+    padding:50px;
+    text-align:center;
+    border-radius:12px;
+    color:#6b7280;
+    box-shadow:0 6px 16px rgba(0,0,0,0.05);
+}
+</style>
+
+<div class="container">
+    <h2>Draft Letters</h2>
+
+    <!-- FILTER CARDS 
+    <div class="type-cards">
+        {% for type, items in grouped_drafts.items() %}
+        <div class="type-card {% if loop.first %}active{% endif %}"
+             onclick="showType('{{ type }}')">
+            <h4>{{ type }}</h4>
+            <p>{{ items|length }} drafts</p>
+        </div>
+        {% endfor %}
+    </div>
+
+    <!-- DRAFT LISTS 
+    {% for type, items in grouped_drafts.items() %}
+    <div class="draft-group"
+         id="group-{{ type }}"
+         {% if not loop.first %}style="display:none"{% endif %}>
+
+        {% for d in items %}
+        <div class="draft-card">
+            <div class="draft-info">
+                <h4>{{ d.name }}</h4>
+                <p>{{ type }}</p>
+                <p>{{ d.created_at }}</p>
+            </div>
+
+            <div class="resume">
+                <a href="{{ url_for('edit_draft', draft_id=d.id) }}">
+                    Resume
+                </a>
+            </div>
+        </div>
+        {% endfor %}
+
+    </div>
+    {% endfor %}
+
+    {% if not grouped_drafts %}
+    <div class="empty">
+        <h3>No Drafts Available</h3>
+        <p>Create a letter and save it as draft</p>
+    </div>
+    {% endif %}
+</div>
+
+<script>
+function showType(type) {
+    document.querySelectorAll(".draft-group").forEach(el => el.style.display = "none");
+    document.getElementById("group-" + type).style.display = "block";
+
+    document.querySelectorAll(".type-card").forEach(c => c.classList.remove("active"));
+    event.currentTarget.classList.add("active");
+}
+</script>
+-->
+{% extends "base.html" %}
+{% block title %}Draft Letters{% endblock %}
+
+{% block content %}
+<style>
+.container { max-width: 1000px; margin:auto; }
+
+.type-cards {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(180px,1fr));
+    gap: 14px;
+    margin: 20px 0 30px;
+}
+
+.type-card {
+    background: white;
+    padding: 16px;
+    border-radius: 12px;
+    cursor: pointer;
+    box-shadow: 0 6px 16px rgba(0,0,0,0.06);
+    border: 2px solid transparent;
+    transition: all .2s ease;
+}
+
+.type-card:hover { transform: translateY(-2px); }
+
+.type-card.active {
+    border-color: #2563eb;
+    background: #eef2ff;
+}
+
+.type-card h4 { margin: 0; font-size: 15px; }
+.type-card p { margin: 6px 0 0; font-size: 13px; color:#6b7280; }
+
+.draft-card {
+    background: white;
+    border-radius: 12px;
+    padding: 16px 18px;
+    margin-bottom: 14px;
+    display:flex;
+    justify-content:space-between;
+    align-items:flex-start;
+    box-shadow: 0 6px 16px rgba(0,0,0,0.05);
+}
+
+.draft-info h4 { margin:0; font-size:15px; }
+.draft-info p { margin:4px 0; font-size:13px; color:#6b7280; }
+
+.preview-text {
+    margin-top: 6px;
+    font-size: 13px;
+    color: #374151;
+    line-height: 1.4;
+}
+
+.resume a {
+    text-decoration:none;
+    background:#2563eb;
+    color:white;
+    padding:8px 14px;
+    border-radius:6px;
+    font-size:14px;
+    white-space: nowrap;
+}
+
+.empty {
+    background:white;
+    padding:50px;
+    text-align:center;
+    border-radius:12px;
+    color:#6b7280;
+    box-shadow:0 6px 16px rgba(0,0,0,0.05);
+}
+</style>
+
+<div class="container">
+    <h2>Draft Letters</h2>
+
+    <!-- FILTER CARDS -->
+    <div class="type-cards">
+        {% for type, items in grouped_drafts.items() %}
+        <div class="type-card {% if loop.first %}active{% endif %}"
+             onclick="showType('{{ type }}')">
+            <h4>{{ type }}</h4>
+            <p>{{ items|length }} drafts</p>
+        </div>
+        {% endfor %}
+    </div>
+
+    <!-- DRAFT LISTS -->
+    {% for type, items in grouped_drafts.items() %}
+    <div class="draft-group"
+         id="group-{{ type }}"
+         {% if not loop.first %}style="display:none"{% endif %}>
+
+        {% for d in items %}
+        <div class="draft-card">
+            <div class="draft-info">
+                <h4>{{ d.name }}</h4>
+                <p>{{ type }}</p>
+                <p>{{ d.created_at }}</p>
+
+                <!-- ✅ CLEAN PREVIEW -->
+                {% if d.content %}
+                <div class="preview-text">
+                    {{ d.content | striptags | replace('\n', ' ') | truncate(160) }}
+                </div>
+                {% endif %}
+            </div>
+
+            <div class="resume">
+                <a href="{{ url_for('edit_draft', draft_id=d.id) }}">
+                    Resume
+                </a>
+            </div>
+        </div>
+        {% endfor %}
+
+    </div>
+    {% endfor %}
+
+    {% if not grouped_drafts %}
+    <div class="empty">
+        <h3>No Drafts Available</h3>
+        <p>Create a letter and save it as draft</p>
+    </div>
+    {% endif %}
+</div>
+
+<script>
+function showType(type) {
+    document.querySelectorAll(".draft-group").forEach(el => el.style.display = "none");
+    document.getElementById("group-" + type).style.display = "block";
+
+    document.querySelectorAll(".type-card").forEach(c => c.classList.remove("active"));
+    event.currentTarget.classList.add("active");
+}
+</script>
+{% endblock %}

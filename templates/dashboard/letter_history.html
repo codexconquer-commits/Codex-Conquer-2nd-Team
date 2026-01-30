@@ -1,0 +1,204 @@
+{% extends "base.html" %}
+{% block title %}Letter History{% endblock %}
+
+{% block content %}
+<style>
+.history-container {
+    max-width: 1000px;
+    margin: auto;
+}
+
+/* FILTER CARDS */
+.filter-bar {
+    display: flex;
+    gap: 14px;
+    margin: 20px 0 30px;
+}
+
+.filter-card {
+    flex: 1;
+    background: white;
+    padding: 16px;
+    border-radius: 12px;
+    text-align: center;
+    cursor: pointer;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.06);
+    border: 2px solid transparent;
+    font-weight: bold;
+}
+
+.filter-card.active {
+    border-color: #2563eb;
+    color: #2563eb;
+}
+
+/* LETTER LIST */
+.letter-card {
+    background: white;
+    border-radius: 12px;
+    padding: 16px 18px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    box-shadow: 0 6px 16px rgba(0,0,0,0.05);
+    margin-bottom: 12px;
+}
+
+.left {
+    display: flex;
+    gap: 14px;
+}
+
+.icon {
+    width: 42px;
+    height: 42px;
+    border-radius: 10px;
+    background: #2563eb;
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.details h4 {
+    margin: 0;
+    font-size: 15px;
+}
+
+.details p {
+    margin: 4px 0;
+    font-size: 13px;
+    color: #6b7280;
+}
+
+.hidden {
+    display: none;
+}
+.filter-bar {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 18px;
+    margin: 25px 0 35px;
+}
+
+.filter-card {
+    background: white;
+    padding: 18px;
+    border-radius: 16px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    box-shadow: 0 6px 18px rgba(0,0,0,0.06);
+    transition: all 0.2s ease;
+    border: 2px solid transparent;
+}
+
+.filter-card:hover {
+    transform: translateY(-3px);
+}
+
+.filter-card.active {
+    border-color: #2563eb;
+    background: #eef2ff;
+}
+
+.filter-left {
+    display: flex;
+    gap: 12px;
+    align-items: center;
+}
+
+.filter-icon {
+    width: 42px;
+    height: 42px;
+    border-radius: 12px;
+    background: #2563eb;
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 18px;
+}
+
+.filter-count {
+    background: #e5e7eb;
+    padding: 4px 10px;
+    border-radius: 999px;
+    font-size: 12px;
+}
+
+</style>
+
+<div class="history-container">
+
+    <h2>Letter History</h2>
+
+    <!-- FILTER CARDS -->
+    <div class="filter-bar">
+    {% for letter_type, letters in grouped_letters.items() %}
+    <div class="filter-card {% if letter_type == 'Offer Letter' %}active{% endif %}"
+         onclick="showLetters('{{ letter_type }}', this)">
+
+        <div class="filter-left">
+            <div class="filter-icon">📄</div>
+            <div>
+                <strong>{{ letter_type }}</strong>
+                <div class="filter-count">{{ letters|length }}</div>
+            </div>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+
+
+    <!-- LETTER LIST -->
+    {% for letter_type, letters in grouped_letters.items() %}
+    <div class="letter-section {% if letter_type != 'Offer Letter' %}hidden{% endif %}"
+         data-type="{{ letter_type }}">
+
+        {% for letter in letters %}
+        <div class="letter-card">
+            <div class="left">
+                <div class="icon">📄</div>
+                <div class="details">
+                    <h4>{{ letter.name }}</h4>
+                    <p>{{ letter.created_at }}</p>
+                </div>
+            </div>
+
+            <a href="{{ url_for('download_letter', filename=letter.file_path.split('/')[-1]) }}">
+                ⬇
+            </a>
+        </div>
+        {% endfor %}
+
+        {% if not letters %}
+            <p style="color:#9ca3af;">No {{ letter_type }}s found.</p>
+        {% endif %}
+    </div>
+    {% endfor %}
+
+</div>
+
+<script>
+function showLetters(type, card) {
+
+    // Hide all sections
+    document.querySelectorAll(".letter-section").forEach(sec => {
+        sec.classList.add("hidden");
+    });
+
+    // Show selected section
+    document.querySelector(`[data-type="${type}"]`)
+        .classList.remove("hidden");
+
+    // Update active card
+    document.querySelectorAll(".filter-card").forEach(c => {
+        c.classList.remove("active");
+    });
+    card.classList.add("active");
+}
+</script>
+
+{% endblock %}

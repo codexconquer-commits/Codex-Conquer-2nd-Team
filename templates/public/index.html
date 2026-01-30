@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>HR Letters</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/landing.css') }}">
+</head>
+<body>
+
+<!-- NAVBAR -->
+<header class="navbar">
+    <div class="logo">📄 HR Letters</div>
+    <a href="{{ url_for('login') }}" class="account-btn">My Account</a>
+</header>
+
+<!-- HERO -->
+<section class="hero">
+  <div class="hero-container">
+
+    <div class="hero-left">
+      <h1>
+        This HR letter generator<br>
+        gets you <span>results</span>
+      </h1>
+
+      <p>Only 2% of HR teams use modern tools. Yours will be one of them.</p>
+
+      <a href="{{ url_for('login') }}" class="cta-btn">
+        Generate my letter →
+      </a>
+
+      <ul class="points">
+        <li>✅ 50% faster than manual letter creation</li>
+        <li>🔒 Secure – Enterprise-grade data protection</li>
+      </ul>
+
+      <div class="stats">
+        <strong>12,547</strong> letters generated today
+      </div>
+    </div>
+
+    <div class="hero-right">
+      <div class="image-card">
+        <img src="{{ url_for('static', filename='images/hr-hero.png') }}" alt="HR discussion">
+        <span class="badge">100% Compliant</span>
+      </div>
+    </div>
+
+  </div>
+</section>
+
+
+<!-- FEATURES -->
+<section class="features">
+    <div class="card">
+        ⏱️
+        <h3>Generate in 5 mins</h3>
+        <p>3x faster than manual drafting</p>
+    </div>
+
+    <div class="card">
+        🛡️
+        <h3>Zero compliance risks</h3>
+        <p>Templates follow labor laws</p>
+    </div>
+
+    <div class="card">
+        📑
+        <h3>Professional templates</h3>
+        <p>Offer, Relieving, Termination & more</p>
+    </div>
+
+    <div class="card">
+        👥
+        <h3>Trusted by HR teams</h3>
+        <p>Used by growing organizations</p>
+    </div>
+</section>
+
+<!-- FOOTER -->
+<footer>
+    © 2026 HR Letters. Secure, compliant, professional.
+</footer>
+
+</body>
+</html>

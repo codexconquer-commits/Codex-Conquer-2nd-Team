@@ -1,0 +1,223 @@
+<!--<!DOCTYPE html>
+<html>
+<head>
+    <title>Generate Letter</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <style>
+        body {
+            font-family: Arial;
+            background: #f4f6f8;
+        }
+        .box {
+            width: 450px;
+            margin: 80px auto;
+            background: white;
+            padding: 25px;
+            border-radius: 8px;
+            box-shadow: 0 0 10px rgba(0,0,0,0.1);
+        }
+        h2 {
+            text-align: center;
+        }
+        input, select, button {
+            width: 100%;
+            padding: 10px;
+            margin-top: 15px;
+        }
+        button {
+            background: #007bff;
+            color: white;
+            border: none;
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body>
+
+<div class="box">
+    <h2>Generate Letter</h2>
+
+    <form method="post">
+
+        Searchable Employee Dropdown 
+        <input list="employeeList"
+               id="employeeInput"
+               placeholder="Select or search employee"
+               required>
+
+        <datalist id="employeeList">
+            {% for emp in employees %}
+                <option data-id="{{ emp.id }}"
+                        value="{{ emp.name }} - {{ emp.designation }}">
+                </option>
+            {% endfor %}
+        </datalist>
+
+        Hidden field to send employee_id 
+        <input type="hidden" name="employee_id" id="employeeId">
+
+        <!-- Letter Type 
+        <select name="letter_type" required>
+            <option value="">Select Letter Type</option>
+            <option value="offer">Offer Letter</option>
+            <option value="relieving">Relieving Letter</option>
+            <option value="warning">Warning Letter</option>
+            <option value="termination">Termination Letter</option>
+            <option value="appreciation">Certificate of Appreciation</option>
+        </select>
+
+        <button type="submit">Generate Letter</button>
+    </form>
+</div>
+
+<!-- ✅ SINGLE SCRIPT BLOCK ONLY 
+<script>
+const employeeInput = document.getElementById("employeeInput");
+const employeeIdInput = document.getElementById("employeeId");
+const form = document.querySelector("form");
+
+function syncEmployeeId() {
+    const value = employeeInput.value;
+    const options = document.querySelectorAll("#employeeList option");
+    employeeIdInput.value = "";
+
+    options.forEach(option => {
+        if (option.value === value) {
+            employeeIdInput.value = option.dataset.id;
+        }
+    });
+}
+
+// 🔹 Run when user types
+employeeInput.addEventListener("input", syncEmployeeId);
+
+// 🔹 IMPORTANT: run when page is restored (back button case)
+document.addEventListener("DOMContentLoaded", syncEmployeeId);
+
+// 🔹 Final safety check before submit
+form.addEventListener("submit", function (e) {
+    if (!employeeIdInput.value) {
+        alert("Please select an employee from the list");
+        e.preventDefault();
+    }
+});
+</script>
+
+
+</body>
+</html>
+-->
+{% extends "base.html" %}
+
+{% block title %}Generate Letter{% endblock %}
+
+{% block content %}
+<style>
+    .card {
+        max-width: 520px;
+        margin: auto;
+        background: white;
+        padding: 30px;
+        border-radius: 12px;
+        box-shadow: 0 10px 30px rgba(0,0,0,0.08);
+    }
+
+    h2 {
+        text-align: center;
+        margin-bottom: 25px;
+    }
+
+    label {
+        font-weight: 600;
+        margin-top: 15px;
+        display: block;
+    }
+
+    input, select {
+        width: 100%;
+        padding: 12px;
+        margin-top: 8px;
+        border-radius: 8px;
+        border: 1px solid #ddd;
+        font-size: 14px;
+    }
+
+    button {
+        width: 100%;
+        padding: 12px;
+        margin-top: 25px;
+        background: #2563eb;
+        color: white;
+        border: none;
+        border-radius: 8px;
+        font-size: 15px;
+        cursor: pointer;
+    }
+
+    button:hover {
+        background: #1e4ed8;
+    }
+</style>
+
+<div class="card">
+    <h2>Generate Letter</h2>
+
+    <form method="post">
+
+        <!-- Employee Search -->
+        <label>Select Employee</label>
+        <input list="employeeList"
+               id="employeeInput"
+               placeholder="Search employee by name"
+               required>
+
+        <datalist id="employeeList">
+            {% for emp in employees %}
+                <option data-id="{{ emp.id }}"
+                        value="{{ emp.name }} - {{ emp.designation }}">
+                </option>
+            {% endfor %}
+        </datalist>
+
+        <input type="hidden" name="employee_id" id="employeeId">
+
+        <!-- Letter Type -->
+        <label>Letter Type</label>
+        <select name="letter_type" required>
+            <option value="">Select letter type</option>
+            <option value="offer">Offer Letter</option>
+            <option value="relieving">Relieving Letter</option>
+            <!--<option value="warning">Warning Letter</option>-->
+            <option value="termination">Termination Letter</option>
+            <option value="appreciation">Certificate of Appreciation</option>
+        </select>
+
+        <button type="submit">Preview Letter</button>
+    </form>
+</div>
+
+<script>
+const employeeInput = document.getElementById("employeeInput");
+const employeeIdInput = document.getElementById("employeeId");
+
+employeeInput.addEventListener("input", function () {
+    const value = this.value;
+    const options = document.querySelectorAll("#employeeList option");
+
+    employeeIdInput.value = "";
+
+    options.forEach(option => {
+        if (option.value === value) {
+            employeeIdInput.value = option.dataset.id;
+        }
+    });
+});
+
+document.querySelector("form").addEventListener("submit", function (e) {
+    if (!employeeIdInput.value) {
+        alert("Please select an employee from the list");
+        e.preventDefault();
+    }
+});
+</script>
+{% endblock %}

@@ -1,0 +1,13 @@
+set up virtual environment: python -m venv venv
+venv\Scripts\activate
+pip install flask
+pip install reportlab
+python app.py
+http://127.0.0.1:5000 - page open
+http://127.0.0.1:5000/login - login page
+http://127.0.0.1:5000/add-hr = adds hr 
+http://127.0.0.1:5000/add-employee = adds employee to db
+http://127.0.0.1:5000/generate-letter = asks for letter type and generates letter
+http://127.0.0.1:5000/dashboard = opens dashboard
+http://127.0.0.1:5000/letter-history = shows already generated letters
+http://127.0.0.1:5000/drafts =  shows drafts

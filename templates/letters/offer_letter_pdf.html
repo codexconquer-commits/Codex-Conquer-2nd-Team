@@ -1,0 +1,381 @@
+
+<style>
+    html, body {
+    margin: 0;
+    padding: 0;
+    font-size: 22px;
+    font-family: "Times New Roman", serif;
+
+}
+
+    /* =========================
+   PDF / PRINT FIXES
+   ========================= */
+@media print {
+
+    /* Remove browser centering */
+    .page {
+        display: block !important;
+        margin: 0 !important;
+    }
+
+    /* Fix paper width & alignment */
+    .paper {
+        width: 100% !important;
+        margin: 0 auto !important;
+        box-shadow: none !important;
+        border-radius: 0 !important;
+    }
+
+    /* Remove left decorative strip if any */
+    .paper::before,
+    .paper::after {
+        display: none !important;
+    }
+
+    /* Hide action buttons in PDF */
+    .actions {
+        display: none !important;
+    }
+
+    button {
+        display: none !important;
+    }
+
+    /* Prevent weird page breaks */
+    .box,
+    .avoid-break {
+        page-break-inside: avoid;
+    }
+
+    .page-break {
+        page-break-before: always;
+    }
+}
+
+@page {
+    size: A4;
+    margin: 20mm;
+}
+
+.paper {
+    box-shadow: none;
+}
+
+.page {
+    display: flex;
+    justify-content: center;
+    margin: 30px 0;
+}
+
+.paper {
+    width: 210mm;
+    max-width:210mm;
+    background: white;
+    border-radius: 10px;
+    box-shadow: 0 8px 30px rgba(0,0,0,0.1);
+    font-family: "Times New Roman", serif;
+    line-height: 1.65;
+    overflow: hidden;
+}
+
+/* HEADER */
+.banner {
+    background: #fdf6ee;
+    padding: 30px;
+    text-align: center;
+}
+
+.banner h1 {
+    margin: 0;
+    font-size: 28px;
+    letter-spacing: 1px;
+}
+
+.banner h3 {
+    margin-top: 6px;
+    font-size: 22px;
+    font-weight: normal;
+}
+
+/* IMAGE */
+.hero-img {
+    width: 100%;
+    display: block;
+}
+
+/* CONTENT */
+.content {
+    padding: 50px 60px;
+}
+
+.date {
+    text-align: right;
+    font-size: 22px;
+    font-weight: bold;
+    margin-bottom: 25px;
+}
+
+.box {
+    margin: 18px 0;
+    padding: 16px 18px;
+    border-radius: 12px;
+    font-size: 22px;
+}
+
+.box h4 {
+    margin: 0 0 6px;
+    font-size: 22px;
+}
+
+.purple { background: #f1edff; }
+.blue { background: #e8f3ff; }
+.warning { background: #fff1df; }
+
+.box ul {
+    margin: 6px 0 0 18px;
+}
+
+/* FOOTER */
+.footer {
+    padding: 40px 60px;
+    font-size: 22px;
+    line-height: 1.6;
+}
+
+/* ACTIONS */
+.actions {
+    max-width: 820px;
+    margin: 20px auto;
+}
+
+.btn-primary {
+    width: 100%;
+    padding: 12px;
+    background: #2563eb;
+    color: white;
+    border: none;
+    border-radius: 6px;
+    font-size: 15px;
+    cursor: pointer;
+}
+
+.btn-secondary {
+    width: 100%;
+    padding: 10px;
+    margin-top: 10px;
+    background: #f3f4f6;
+    border: 1px solid #d1d5db;
+    border-radius: 6px;
+    cursor: pointer;
+}
+/* PDF PAGE BREAKS */
+.page-break {
+    page-break-before: always;
+}
+
+.avoid-break {
+    page-break-inside: avoid;
+}
+
+
+</style>
+
+<div class="page">
+<div class="paper" contenteditable="true">
+
+    <!-- HEADER -->
+    <div class="banner">
+        <h1>INTERNSHIP OFFER LETTER</h1>
+        <h3>{{ designation | upper }}</h3>
+    </div>
+
+    <!--<img class="hero-img"
+         src="{{ url_for('static', filename='images/fsd.jpg') }}">-->
+         <img
+  src="{{ request.url_root }}static/images/fsd.webp"
+  style="width:100%; display:block;"
+>
+
+    <!-- LETTER BODY (THIS GOES TO PDF) -->
+    <div class="content" id="letterBody">
+
+        <div class="date">{{ today }}</div>
+
+        <p>Dear {{ name }},</p>
+
+        <p>
+            <strong>Congratulations!</strong> We are pleased to offer you an
+            Internship opportunity as a <strong>{{ designation }}</strong>
+            with <strong>CodeXConquer</strong>.
+        </p>
+
+        <p>
+            We specialize in Mobile App Development, Web Development,
+            Digital Marketing, and other services.
+            You are requested to accept the Internship with us
+            for a tenure of three months starting from
+            <strong>{{ joining_date }}</strong>.
+        </p>
+
+        <p>
+            During the course of your internship, you will gain valuable
+            hands-on experience by working on real-world projects,
+            receive guidance and mentorship from industry experts,
+            and gain exposure to best practices that will enhance
+            your professional skills and career readiness.
+        </p>
+        <div class="page-break"></div>
+
+        <p><strong>Below are the terms of your Internship:</strong></p>
+
+        <div class="box purple avoid-break">
+            <h4>Duration</h4>
+            <ul>
+                <li>
+                    The duration of this internship is three (3) months,
+                    subject to extension in the event of additional leave
+                    taken beyond the allotted limit.
+                </li>
+            </ul>
+        </div>
+
+        <div class="box blue avoid-break">
+            <h4>Work Commitment</h4>
+            <ul>
+                <li>Monday to Friday, Work Timings: 9:00 AM to 6:00 PM (Flexible)</li>
+                <li>
+                    You are expected to dedicate a minimum of 5–6 hours
+                    per day during your internship. Working hours may be
+                    adjusted based on assigned tasks, provided all
+                    deliverables are completed on time.
+                </li>
+                <li>
+                    You are expected to maintain the highest standards of
+                    professionalism, punctuality, and dedication throughout
+                    the internship.
+                </li>
+                <li>
+                    Your continuation of the internship will be contingent
+                    upon your performance and adherence to company policies.
+                </li>
+            </ul>
+        </div>
+        <div class="box blue avoid-break">
+    <h4>Stipend</h4>
+    <p><strong>{{ stipend }}</strong></p>
+</div>
+<div class="page-break"></div>
+
+
+        <div class="box blue avoid-break">
+            <h4>Leaves Policy</h4>
+            <ul>
+                <li>
+                    You are entitled to a total of seven (7) days of leave
+                    during your internship. Any leave beyond this will
+                    result in an extension of the internship tenure.
+                </li>
+                <li>
+                    In case of emergency or sick leave, prior intimation
+                    of a minimum of eight (8) hours is required.
+                </li>
+                <li>
+                    For planned leave, prior notice of 48–72 hours is mandatory.
+                </li>
+                <li>A notice period of one week is required in case of resignation.</li>
+            </ul>
+        </div>
+
+        <div class="box warning">
+            <h4>Warning</h4>
+            <ul>
+                <li>
+                    Absence without prior notice or approval from the
+                    reporting manager is prohibited and may result in termination.
+                </li>
+                <li>
+                    Harassment and bullying are strictly prohibited and
+                    can result in immediate termination.
+                </li>
+                <li>
+                    If the internship is discontinued before completion
+                    of the agreed tenure, an early termination fee of
+                    ₹399 will be applicable for issuance of documents.
+                </li>
+            </ul>
+        </div>
+<div class="page-break"></div>
+
+
+        <p>
+            We are delighted to welcome you to <strong>CodeXConquer</strong>
+            and look forward to your valuable contributions.
+        </p>
+
+        <p>
+            Please confirm your acceptance of this internship offer
+            by replying before the end of the day.
+        </p>
+
+    </div>
+
+    <!-- FOOTER -->
+    <div class="footer">
+        <p>
+            Sincerely,<br><br>
+            <strong>HR Team</strong><br>
+            CodeXConquer
+        </p>
+    </div>
+
+</div>
+</div>
+
+<!-- ACTION BUTTONS -->
+<div class="actions">
+
+<form method="post"
+      action="{{ url_for('finalize_offer_letter') }}"
+      onsubmit="setFinalContent()">
+
+    <input type="hidden" name="emp_id" value="{{ emp_id }}">
+    <input type="hidden" name="content" id="finalContent">
+
+    <button class="btn-primary">Confirm & Generate Letter</button>
+</form>
+
+<form id="draftForm" method="post">
+    <input type="hidden" name="emp_id" value="{{ emp_id }}">
+    <input type="hidden" name="letter_type" value="Offer Letter">
+    <input type="hidden" name="content" id="draftContent">
+    <input type="hidden" name="draft_id" value="{{ draft_id }}">
+
+    <button type="submit" class="btn-secondary">💾 Save as Draft</button>
+</form>
+
+</div>
+
+<script>
+function setFinalContent() {
+    document.getElementById("finalContent").value =
+        document.getElementById("letterBody").innerHTML;
+}
+
+document.getElementById("draftForm").addEventListener("submit", function(e) {
+    e.preventDefault();
+    document.getElementById("draftContent").value =
+        document.getElementById("letterBody").innerHTML;
+
+    fetch("{{ url_for('save_draft') }}", {
+        method: "POST",
+        body: new FormData(this)
+    })
+    .then(res => res.json())
+    .then(data => {
+        if (data.status === "success") {
+            document.getElementById("draftModal").style.display = "flex";
+        }
+    });
+});
+</script>

@@ -1,0 +1,245 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="profile-page">
+
+    <!-- Header -->
+    <div class="page-header">
+        <h2>Manage Profile</h2>
+    </div>
+
+    <!-- Profile Picture -->
+    <div class="card center">
+    <div class="profile-photo-wrapper">
+
+        {% if profile and profile.photo %}
+            <img src="{{ url_for('static', filename=profile.photo) }}"
+                 class="avatar">
+        {% else %}
+            <div class="avatar-placeholder">
+                {% if profile and profile.full_name %}
+                    {{ profile.full_name[0]|upper }}
+                {% else %}
+                    {{ user.username[0]|upper }}
+                {% endif %}
+            </div>
+        {% endif %}
+
+        <p class="caption">Profile Picture</p>
+    </div>
+
+    <div class="photo-actions">
+        <form action="{{ url_for('update_profile_photo') }}"
+              method="POST"
+              enctype="multipart/form-data">
+            <label class="btn-secondary">
+                Change Photo
+                <input type="file" name="photo" hidden required>
+            </label>
+            <button type="submit" class="btn-primary">Upload</button>
+        </form>
+
+        {% if profile and profile.photo %}
+        <form action="{{ url_for('remove_profile_photo') }}" method="POST">
+            <button class="btn-danger">Remove Photo</button>
+        </form>
+        {% endif %}
+    </div>
+</div>
+
+
+    <!-- Personal Information -->
+    <div class="card">
+        <h3>Personal Information</h3>
+
+        <form method="POST">
+            <label>Full Name</label>
+            <input type="text" name="full_name"
+                   value="{{ profile.full_name if profile else '' }}">
+
+            <label>Email Address</label>
+            <input type="email" name="email"
+                   value="{{ profile.email if profile else user.email }}">
+
+            <label>Phone Number</label>
+            <input type="text" name="phone"
+                   value="{{ profile.phone if profile else '' }}">
+
+            <!-- Professional Info -->
+            <h3 style="margin-top:25px;">Professional Information</h3>
+
+            <label>Job Title / Role</label>
+            <input type="text" name="role"
+                   value="{{ profile.role if profile else '' }}">
+
+            <!-- Save -->
+            <button type="submit" class="btn-primary full-width">
+                Save Profile
+            </button>
+            <a href="{{ url_for('dashboard') }}" class="btn-link">Cancel</a>
+        </form>
+    </div>
+
+    <!-- Profile Preview -->
+    <div class="card preview">
+        <h3>Profile Preview</h3>
+        <div class="preview-box">
+            <div class="avatar small">
+                {{ user.username[0]|upper }}
+            </div>
+            <div>
+                <strong>{{ profile.full_name if profile else user.username }}</strong><br>
+                <span>{{ profile.role if profile else '' }}</span><br>
+                <span>{{ profile.email if profile else user.email }}</span>
+            </div>
+        </div>
+    </div>
+
+</div>
+<style>
+.profile-page {
+    max-width: 900px;
+    margin: auto;
+}
+
+.page-header {
+    margin-bottom: 20px;
+}
+
+.card {
+    background: #fff;
+    border-radius: 10px;
+    padding: 20px;
+    margin-bottom: 20px;
+}
+
+.center {
+    text-align: center;
+}
+
+.avatar {
+    width: 90px;
+    height: 90px;
+    border-radius: 50%;
+    object-fit: cover;
+}
+
+.avatar.small {
+    width: 40px;
+    height: 40px;
+}
+
+.avatar-placeholder {
+    width: 90px;
+    height: 90px;
+    background: #2563eb;
+    color: #fff;
+    font-size: 36px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.caption {
+    font-size: 12px;
+    color: #666;
+}
+
+label {
+    font-weight: 600;
+    margin-top: 12px;
+    display: block;
+}
+
+input {
+    width: 100%;
+    padding: 10px;
+    margin-top: 5px;
+    border-radius: 6px;
+    border: 1px solid #ddd;
+}
+
+.photo-actions {
+    display: flex;
+    justify-content: center;
+    gap: 10px;
+    margin-top: 10px;
+}
+
+.btn-primary {
+    background: #2563eb;
+    color: white;
+    padding: 10px;
+    border-radius: 8px;
+    border: none;
+    cursor: pointer;
+}
+
+.btn-secondary {
+    background: #e5e7eb;
+    padding: 8px 12px;
+    border-radius: 8px;
+    cursor: pointer;
+}
+
+.btn-danger {
+    background: #dc2626;
+    color: white;
+    padding: 8px 12px;
+    border-radius: 8px;
+    border: none;
+}
+
+.full-width {
+    width: 100%;
+    margin-top: 20px;
+}
+
+.btn-link {
+    display: block;
+    text-align: center;
+    margin-top: 10px;
+    color: #555;
+    text-decoration: none;
+}
+
+.preview-box {
+    display: flex;
+    gap: 15px;
+    align-items: center;
+    background: #f1f5f9;
+    padding: 15px;
+    border-radius: 8px;
+}
+.profile-photo-wrapper {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+}
+
+.avatar,
+.avatar-placeholder {
+    width: 96px;
+    height: 96px;
+    border-radius: 50%;
+}
+
+.avatar {
+    object-fit: cover;
+}
+
+.avatar-placeholder {
+    background: #2563eb;
+    color: white;
+    font-size: 40px;
+    font-weight: bold;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+</style>
+
+{% endblock %}

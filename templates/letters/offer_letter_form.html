@@ -1,0 +1,137 @@
+{% extends "base.html" %}
+{% block title %}Offer Letter{% endblock %}
+
+{% block content %}
+<style>
+.wrapper {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+}
+
+.panel {
+    background: #fff;
+    border-radius: 10px;
+    padding: 20px;
+}
+
+.panel h3 {
+    margin-bottom: 15px;
+}
+
+input, textarea {
+    width: 100%;
+    padding: 10px;
+    margin-bottom: 12px;
+    border-radius: 6px;
+    border: 1px solid #ddd;
+}
+
+textarea { height: 80px; }
+
+.preview {
+    font-family: "Times New Roman", serif;
+    padding: 40px;
+    line-height: 1.6;
+    border: 1px solid #eee;
+}
+
+.preview h2 {
+    text-align: center;
+    margin: 20px 0;
+    text-decoration: underline;
+}
+
+.actions {
+    margin-top: 15px;
+    display: flex;
+    gap: 10px;
+}
+
+button {
+    flex: 1;
+    padding: 12px;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+}
+
+.primary { background: #2563eb; color: white; }
+.secondary { background: #e5e7eb; }
+</style>
+
+<div class="wrapper">
+
+<!-- LEFT: FORM -->
+<div class="panel">
+    <h3>Employee Details</h3>
+
+    <input id="name" placeholder="Employee Name">
+    <input id="designation" placeholder="Designation">
+    <input id="department" placeholder="Department">
+
+    <h3>Letter Details</h3>
+    <input id="joining" placeholder="Joining Date">
+    <input id="salary" placeholder="Annual Salary (CTC)">
+    <textarea id="remarks" placeholder="Additional Remarks"></textarea>
+
+    <div class="actions">
+        <button class="primary">Generate Letter</button>
+        <button class="secondary">Save as Draft</button>
+    </div>
+</div>
+
+<!-- RIGHT: LIVE PREVIEW -->
+<div class="panel preview" id="preview">
+    <b>ACME Corporation</b><br>
+    123 Business Avenue<br><br>
+
+    <p>Date: <span id="p_date"></span></p>
+
+    <h2>Offer Letter</h2>
+
+    <p>Dear <span id="p_name">Employee</span>,</p>
+
+    <p>
+        We are pleased to offer you the position of
+        <b><span id="p_designation">Designation</span></b>
+        in the <span id="p_department">Department</span>.
+    </p>
+
+    <p>
+        Your joining date will be <b><span id="p_joining"></span></b>
+        with an annual compensation of <b><span id="p_salary"></span></b>.
+    </p>
+
+    <p id="p_remarks"></p>
+
+    <p>
+        Sincerely,<br><br>
+        Human Resources Department<br>
+        ACME Corporation
+    </p>
+</div>
+
+</div>
+
+<script>
+const bind = (input, preview) => {
+    document.getElementById(input).addEventListener("input", e => {
+        document.getElementById(preview).innerText = e.target.value || preview;
+    });
+};
+
+bind("name","p_name");
+bind("designation","p_designation");
+bind("department","p_department");
+bind("joining","p_joining");
+bind("salary","p_salary");
+
+document.getElementById("remarks").addEventListener("input", e => {
+    document.getElementById("p_remarks").innerText = e.target.value;
+});
+
+document.getElementById("p_date").innerText =
+    new Date().toLocaleDateString();
+</script>
+{% endblock %}

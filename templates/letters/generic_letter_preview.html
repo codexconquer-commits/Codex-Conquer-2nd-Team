@@ -1,0 +1,185 @@
+{% extends "base.html" %}
+{% block title %}Letter Preview{% endblock %}
+
+{% block content %}
+<style>
+.page {
+    display: flex;
+    justify-content: center;
+    margin-top: 30px;
+}
+
+.paper {
+    width: 820px;
+    background: white;
+    padding: 60px;
+    border-radius: 8px;
+    box-shadow: 0 8px 25px rgba(0,0,0,0.08);
+    font-family: "Times New Roman", serif;
+    line-height: 1.7;
+}
+
+.paper:focus {
+    outline: none;
+}
+
+.actions {
+    max-width: 820px;
+    margin: 20px auto;
+}
+
+.btn-primary {
+    width: 100%;
+    padding: 12px;
+    background: #2563eb;
+    color: white;
+    border: none;
+    border-radius: 6px;
+    font-size: 15px;
+    cursor: pointer;
+}
+
+.btn-secondary {
+    width: 100%;
+    padding: 10px;
+    margin-top: 10px;
+    background: #f3f4f6;
+    border: 1px solid #d1d5db;
+    border-radius: 6px;
+    cursor: pointer;
+}
+</style>
+
+<div class="page">
+    <div class="paper" contenteditable="true">
+
+        <!-- HEADER -->
+        <p>
+            <b>CodexConquer</b><br>
+            123 Business Avenue, Suite 100<br>
+            New York, NY 10001<br>
+            Phone: (555) 123-4567 | Email: hr@codexconquer.com
+        </p>
+
+        <hr style="border:1px solid #2563eb; margin:15px 0 30px;">
+
+        <!-- TITLE -->
+        <p style="text-align:center; font-weight:bold; font-size:18px;">
+            {{ title }}
+        </p>
+
+        <!-- DATE -->
+        <p><b>Date:</b> {{ today }}</p>
+
+        <!-- GREETING -->
+        <p>Dear {{ name }},</p>
+
+        <!-- BODY -->
+        <div id="letterBody">
+
+        {% if letter_type == "Relieving Letter" %}
+
+            <p>
+                This is to formally acknowledge that you have completed your Internship
+                tenure with <strong>CodeXConquer</strong> from
+                <strong>{{ joining_date }}</strong> to
+                <strong>{{ relieving_date }}</strong>,
+                as a <strong>{{ designation }}</strong>.
+            </p>
+
+            <p>
+                During this period, you demonstrated professionalism, willingness to learn,
+                and a positive work attitude. Your contributions to assigned tasks and projects
+                were appreciated, and you maintained the standards expected from an
+                employee in our organization.
+            </p>
+
+            <p>
+                We appreciate your efforts and commitment during your internship.
+                We wish you the very best in your future academic and professional endeavors.
+            </p>
+
+            <p>
+                If you need any documents or verification regarding your internship,
+                please do not hesitate to contact us.
+            </p>
+
+        {% else %}
+
+            {% if draft_content %}
+                {{ draft_content }}
+            {% else %}
+                {{ body }}
+            {% endif %}
+
+        {% endif %}
+
+        </div>
+
+        <br>
+
+        <!-- FOOTER -->
+        <p>
+            Sincerely,<br><br>
+            <b>Human Resources Department</b><br>
+            CodexConquer
+        </p>
+
+    </div>
+</div>
+
+<div class="actions">
+
+    <!-- FINAL GENERATE -->
+    <form method="post"
+          action="{{ url_for('finalize_generic_letter') }}"
+          onsubmit="setFinalContent()">
+
+        <input type="hidden" name="emp_id" value="{{ emp_id }}">
+        <input type="hidden" name="letter_type" value="{{ letter_type }}">
+        <input type="hidden" name="content" id="finalContent">
+        <input type="hidden" name="draft_id" value="{{ draft_id }}">
+
+        <button class="btn-primary">
+            Confirm & Generate Letter
+        </button>
+    </form>
+
+    <!-- SAVE DRAFT -->
+    <form id="draftForm" method="post">
+        <input type="hidden" name="emp_id" value="{{ emp_id }}">
+        <input type="hidden" name="letter_type" value="{{ letter_type }}">
+        <input type="hidden" name="content" id="draftContent">
+        <input type="hidden" name="draft_id" value="{{ draft_id }}">
+
+        <button type="submit" class="btn-secondary">
+            💾 Save as Draft
+        </button>
+    </form>
+</div>
+
+<script>
+function setFinalContent() {
+    document.getElementById("finalContent").value =
+        document.getElementById("letterBody").innerText;
+}
+
+document.getElementById("draftForm").addEventListener("submit", function(e) {
+    e.preventDefault();
+    document.getElementById("draftContent").value =
+        document.getElementById("letterBody").innerText;
+
+    fetch("{{ url_for('save_draft') }}", {
+        method: "POST",
+        body: new FormData(this)
+    })
+    .then(res => res.json())
+    .then(data => {
+        if (data.status === "success") {
+            alert("Draft saved successfully");
+        }
+    });
+});
+</script>
+
+{% endblock %}

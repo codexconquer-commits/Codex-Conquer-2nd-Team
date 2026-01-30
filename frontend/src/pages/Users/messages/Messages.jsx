@@ -10,11 +10,10 @@ import ChatHeader from "./ChatHeader";
 import ChatInput from "./ChatInput";
 import ChatMessages from "./ChatMessages";
 import ChatSidebar from "./ChatSidebar";
-import useMessagesSocket from "./useMessagesSocket";
 import useAudio from "./useAudioCall.js";
+import useMessagesSocket from "./useMessagesSocket";
 import useVideoCall from "./useVideoCall.js";
 import VideoCall from "./VideoCall.jsx";
-
 
 const BASE = import.meta.env.VITE_BASE_URL;
 
@@ -26,9 +25,8 @@ const Messages = () => {
   const [text, setText] = useState("");
   const [me, setMe] = useState(null);
   const audio = useAudio(me);
-const video = useVideoCall(me);
-const remoteVideoRef = useRef(null);
-const [localVideoStream, setLocalVideoStream] = useState(null);
+  const video = useVideoCall(me);
+  const [localVideoStream, setLocalVideoStream] = useState(null);
 
   const [onlineUsers, setOnlineUsers] = useState([]);
   const [typingUser, setTypingUser] = useState("");
@@ -114,8 +112,41 @@ const [localVideoStream, setLocalVideoStream] = useState(null);
     });
   };
 
+  /* ================= AUDIO / VIDEO CALL TRIGGERS ================= */
 
+  const startAudioCall = async () => {
+    if (!activeChat || !me) return;
 
+    const otherUser = activeChat.members.find((m) => m._id !== me._id);
+    if (!otherUser) return;
+
+    audio.startAudioCall(otherUser);
+  };
+
+  const endAudioCall = () => {
+    audio.endAudioCall();
+  };
+
+  const startVideoCallHandler = async () => {
+    if (!activeChat || !me) return;
+
+    const otherUser = activeChat.members.find((m) => m._id !== me._id);
+    if (!otherUser) return;
+
+    // startVideoCall now takes NO DOM refs; it returns the local stream
+    const localStream = await video.startVideoCall(otherUser);
+    if (localStream) setLocalVideoStream(localStream);
+  };
+
+  const acceptVideoCallHandler = async () => {
+    const localStream = await video.acceptVideoCall();
+    if (localStream) setLocalVideoStream(localStream);
+  };
+
+  const endVideoCallHandler = () => {
+    video.endVideoCall();
+    setLocalVideoStream(null);
+  };
 
   /* ================= RENDER ================= */
 
@@ -172,35 +203,17 @@ const [localVideoStream, setLocalVideoStream] = useState(null);
         ) : (
           <>
             <ChatHeader
-  onCall={() => {
-    const otherUser = activeChat.members.find(
-      (m) => m._id !== me._id
-    );
-    if (otherUser) audio.startAudioCall(otherUser);
-  }}
-
-  onVideoCall={async () => {
-    const otherUser = activeChat.members.find(
-      (m) => m._id !== me._id
-    );
-    if (otherUser) {
-      const stream = await video.startVideoCall(
-        otherUser,
-        remoteVideoRef.current
-      );
-      setLocalVideoStream(stream);
-    }
-  }}
-
-  activeChat={activeChat}
-  me={me}
-  onlineUsers={onlineUsers}
-  isMobile={isMobile}
-  onBack={() => {
-    setShowChatMobile(false);
-    setActiveChat(null);
-  }}
-/>
+              onCall={startAudioCall}
+              onVideoCall={startVideoCallHandler}
+              activeChat={activeChat}
+              me={me}
+              onlineUsers={onlineUsers}
+              isMobile={isMobile}
+              onBack={() => {
+                setShowChatMobile(false);
+                setActiveChat(null);
+              }}
+            />
 
             {/* 🔥 Audio Call Popup */}
             <AudioCall
@@ -217,24 +230,22 @@ const [localVideoStream, setLocalVideoStream] = useState(null);
               onMuteToggle={audio.toggleMute}
             />
 
+            {/* Video Call - VideoCall owns video elements and registers them via registerRemoteElement */}
             <VideoCall
-  open={video.isCallOpen}
-  isConnected={video.isCallConnected}
-  callerName={video.caller?.fullName || "User"}
-  isIncoming={!!video.incomingCall}
-  isMuted={video.isMuted}
-  isCameraOff={video.isCameraOff}
-  localStream={localVideoStream}
-  remoteVideoRef={remoteVideoRef}
-  onAccept={async () => {
-    const stream = await video.acceptVideoCall(remoteVideoRef.current);
-    setLocalVideoStream(stream);
-  }}
-  onReject={video.endVideoCall}
-  onEnd={video.endVideoCall}
-  onMuteToggle={video.toggleMute}
-  onCameraToggle={video.toggleCamera}
-/>
+              open={video.isCallOpen}
+              isConnected={video.isCallConnected}
+              callerName={video.caller?.fullName || "User"}
+              isIncoming={!!video.incomingCall}
+              isMuted={video.isMuted}
+              isCameraOff={video.isCameraOff}
+              localStream={localVideoStream}
+              registerRemoteElement={video.registerRemoteElement}
+              onAccept={acceptVideoCallHandler}
+              onReject={video.rejectVideoCall}
+              onEnd={endVideoCallHandler}
+              onMuteToggle={video.toggleMute}
+              onCameraToggle={video.toggleCamera}
+            />
 
             <ChatMessages
               messages={messages}

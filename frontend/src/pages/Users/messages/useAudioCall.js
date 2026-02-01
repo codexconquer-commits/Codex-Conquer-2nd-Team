@@ -5,11 +5,10 @@ const RTC_CONFIG = {
   iceServers: [{ urls: "stun:stun.l.google.com:19302" }],
 };
 
-export default function useAudioCall(me) {
+export default function useAudio(me) {
   const pcRef = useRef(null);
   const localStreamRef = useRef(null);
   const remoteAudioRef = useRef(null);
-  const pendingCandidatesRef = useRef([]);
   const isCallerRef = useRef(false);
 
   const [isCallOpen, setIsCallOpen] = useState(false);
@@ -19,26 +18,28 @@ export default function useAudioCall(me) {
   const [isMuted, setIsMuted] = useState(false);
 
   /* ================= REMOTE AUDIO ================= */
+
   const attachRemoteAudio = (stream) => {
-  if (!remoteAudioRef.current) {
-    const audio = document.createElement("audio");
-    audio.autoplay = false; // 🔥 important
-    audio.playsInline = true;
-    audio.muted = false;
+    if (!remoteAudioRef.current) {
+      const audio = document.createElement("audio");
+      audio.autoplay = true;
+      audio.playsInline = true;
+      audio.muted = false;
+      document.body.appendChild(audio);
+      remoteAudioRef.current = audio;
+    }
 
-    // mobile safe (NOT display:none)
-    audio.style.position = "fixed";
-    audio.style.top = "-1000px";
-    audio.style.left = "-1000px";
+    remoteAudioRef.current.srcObject = stream;
 
-    document.body.appendChild(audio);
-    remoteAudioRef.current = audio;
-  }
-
-  remoteAudioRef.current.srcObject = stream;
-};
+    remoteAudioRef.current
+      .play()
+      .catch(() =>
+        console.warn("🔇 Autoplay blocked (needs user interaction)")
+      );
+  };
 
   /* ================= CLEANUP ================= */
+
   const cleanup = () => {
     localStreamRef.current?.getTracks().forEach((t) => t.stop());
     pcRef.current?.close();
@@ -51,7 +52,6 @@ export default function useAudioCall(me) {
 
     localStreamRef.current = null;
     pcRef.current = null;
-    pendingCandidatesRef.current = [];
     isCallerRef.current = false;
 
     setIsCallConnected(false);
@@ -61,11 +61,9 @@ export default function useAudioCall(me) {
   };
 
   /* ================= START CALL (CALLER) ================= */
-  const startAudioCall = async (otherUser) => {
-    if (!otherUser || !me) return;
 
+  const startAudioCall = async (otherUser) => {
     isCallerRef.current = true;
-    setCaller(otherUser);
 
     const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
     localStreamRef.current = stream;
@@ -89,6 +87,7 @@ export default function useAudioCall(me) {
     const offer = await pc.createOffer();
     await pc.setLocalDescription(offer);
 
+    setCaller(otherUser);
     setIsCallOpen(true);
 
     socket.emit("call-user", {
@@ -100,73 +99,52 @@ export default function useAudioCall(me) {
 
   /* ================= ACCEPT CALL (CALLEE) ================= */
 
-
   const acceptAudioCall = async () => {
-  if (!incomingCall) return;
+    if (!incomingCall) return;
+    isCallerRef.current = false;
 
-  const { offer, fromUser } = incomingCall;
-  isCallerRef.current = false;
-  setCaller(fromUser);
+    const { offer, fromUser } = incomingCall;
 
-  // 🎤 Get mic access (user gesture = Accept button)
-  const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-  localStreamRef.current = stream;
+    const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+    localStreamRef.current = stream;
 
-  const pc = new RTCPeerConnection(RTC_CONFIG);
-  pcRef.current = pc;
+    const pc = new RTCPeerConnection(RTC_CONFIG);
+    pcRef.current = pc;
 
-  pc.ontrack = (e) => {
-    attachRemoteAudio(e.streams[0]);
+    pc.ontrack = (e) => attachRemoteAudio(e.streams[0]);
 
-    // 🔥 MOBILE FIX: play audio inside user gesture context
-    setTimeout(() => {
-      remoteAudioRef.current?.play().catch(() => {});
-    }, 0);
+    pc.onicecandidate = (e) => {
+      if (e.candidate) {
+        socket.emit("ice-candidate", {
+          toUserId: fromUser._id,
+          candidate: e.candidate,
+        });
+      }
+    };
+
+    stream.getTracks().forEach((t) => pc.addTrack(t, stream));
+
+    await pc.setRemoteDescription(offer);
+
+    const answer = await pc.createAnswer();
+    await pc.setLocalDescription(answer);
+
+    socket.emit("accept-call", {
+      toUserId: fromUser._id,
+      answer,
+    });
+
+    setIsCallConnected(true);
+    setIncomingCall(null);
+    setIsCallOpen(true);
   };
 
-  pc.onicecandidate = (e) => {
-    if (e.candidate) {
-      socket.emit("ice-candidate", {
-        toUserId: fromUser._id,
-        candidate: e.candidate,
-      });
-    }
-  };
+  /* ================= REJECT ================= */
 
-  stream.getTracks().forEach((t) => pc.addTrack(t, stream));
-
-  await pc.setRemoteDescription(offer);
-
-  // apply queued ICE
-  pendingCandidatesRef.current.forEach((c) =>
-    pc.addIceCandidate(c)
-  );
-  pendingCandidatesRef.current = [];
-
-  const answer = await pc.createAnswer();
-  await pc.setLocalDescription(answer);
-
-  socket.emit("accept-call", {
-    toUserId: fromUser._id,
-    answer,
-  });
-
-  setIsCallConnected(true);
-  setIncomingCall(null);
-  setIsCallOpen(true);
-
-  // 🔥 EXTRA SAFETY (some phones need this)
-  setTimeout(() => {
-    remoteAudioRef.current?.play().catch(() => {});
-  }, 200);
-};
-
-
-  /* ================= REJECT CALL ================= */
   const rejectAudioCall = () => {
-    if (!incomingCall?.fromUser?._id) return;
+    if (!incomingCall) return;
 
-    socket.emit("reject-call", {
+    socket.emit("call-rejected", {
       toUserId: incomingCall.fromUser._id,
     });
 
@@ -175,15 +153,15 @@ export default function useAudioCall(me) {
   };
 
   /* ================= END CALL ================= */
+
   const endAudioCall = () => {
-    if (caller?._id) {
-      socket.emit("end-call", { toUserId: caller._id });
-    }
+    socket.emit("end-call", { toUserId: caller?._id });
     cleanup();
     setIsCallOpen(false);
   };
 
   /* ================= MUTE ================= */
+
   const toggleMute = () => {
     const track = localStreamRef.current?.getAudioTracks()[0];
     if (!track) return;
@@ -193,52 +171,38 @@ export default function useAudioCall(me) {
   };
 
   /* ================= SOCKET LISTENERS ================= */
+
   useEffect(() => {
-    const onIncoming = (data) => {
+    socket.on("incoming-call", (data) => {
       setIncomingCall(data);
       setCaller(data.fromUser);
       setIsCallOpen(true);
-    };
+    });
 
-    const onAccepted = async ({ answer }) => {
-      if (!isCallerRef.current || !pcRef.current) return;
-      if (pcRef.current.signalingState !== "have-local-offer") return;
+    socket.on("call-accepted", async ({ answer }) => {
+      // ✅ ONLY CALLER handles answer
+      if (!isCallerRef.current) return;
+
+      if (pcRef.current?.signalingState !== "have-local-offer") return;
 
       await pcRef.current.setRemoteDescription(answer);
       setIsCallConnected(true);
-    };
+    });
 
-    const onIce = ({ candidate }) => {
-      if (!candidate || !pcRef.current) return;
-
-      if (pcRef.current.remoteDescription) {
+    socket.on("ice-candidate", ({ candidate }) => {
+      if (candidate && pcRef.current?.remoteDescription) {
         pcRef.current.addIceCandidate(candidate);
-      } else {
-        pendingCandidatesRef.current.push(candidate);
       }
-    };
+    });
 
-    const onEnded = () => {
+    socket.on("call-ended", () => {
       cleanup();
       setIsCallOpen(false);
-    };
+    });
 
-    socket.on("incoming-call", onIncoming);
-    socket.on("call-accepted", onAccepted);
-    socket.on("ice-candidate", onIce);
-    socket.on("call-ended", onEnded);
-    socket.on("call-rejected", onEnded);
-
-    return () => {
-      socket.off("incoming-call", onIncoming);
-      socket.off("call-accepted", onAccepted);
-      socket.off("ice-candidate", onIce);
-      socket.off("call-ended", onEnded);
-      socket.off("call-rejected", onEnded);
-    };
+    return () => socket.offAny();
   }, []);
 
-  /* ================= EXPORT ================= */
   return {
     isCallOpen,
     isCallConnected,
@@ -251,5 +215,4 @@ export default function useAudioCall(me) {
     endAudioCall,
     toggleMute,
   };
-
 }

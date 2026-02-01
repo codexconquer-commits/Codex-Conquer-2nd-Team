@@ -188,7 +188,7 @@ const AudioCall = ({
           </button>
 
           <button
-            onClick={onReject}
+            onClick={onClose}
             className="flex h-12 w-12 items-center justify-center
             rounded-full bg-red-500 text-white
             shadow-lg hover:bg-red-600 hover:scale-110 transition-all"

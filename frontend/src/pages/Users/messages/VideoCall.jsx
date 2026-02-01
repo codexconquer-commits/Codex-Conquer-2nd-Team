@@ -1,4 +1,11 @@
-import { PhoneOff, Mic, MicOff, Video, VideoOff } from "lucide-react";
+import {
+  PhoneOff,
+  Mic,
+  MicOff,
+  Video,
+  VideoOff,
+  PhoneIncoming,
+} from "lucide-react";
 import { useEffect, useRef } from "react";
 
 const VideoCall = ({
@@ -26,7 +33,7 @@ const VideoCall = ({
     }
   }, [localStream]);
 
-  /* Register remote video element */
+  /* Register remote video */
   useEffect(() => {
     if (remoteVideoRef.current) {
       registerRemoteElement(remoteVideoRef.current);
@@ -37,40 +44,51 @@ const VideoCall = ({
 
   return (
     <div className="fixed inset-0 z-50 bg-black text-white flex flex-col">
-      {/* ================= VIDEO AREA ================= */}
-      <div className="flex-1 relative flex items-center justify-center bg-black">
-        {/* Remote Video */}
-        <div className="w-full h-full max-w-screen-lg aspect-video bg-black">
-          <video
-            ref={remoteVideoRef}
-            autoPlay
-            playsInline
-            className="w-full h-full object-contain bg-black"
-          />
+      {/* ================= HEADER ================= */}
+      <div className="absolute top-0 left-0 right-0 z-20 p-4 flex flex-col items-center">
+        <div className="text-lg font-semibold">{callerName}</div>
+        <div className="text-sm opacity-70">
+          {isIncoming && !isConnected && "Incoming video call"}
+          {!isIncoming && !isConnected && "Calling…"}
+          {isConnected && "Video call connected"}
         </div>
+      </div>
+
+      {/* ================= VIDEO AREA ================= */}
+      <div className="flex-1 relative bg-black">
+        {/* Remote Video */}
+        <video
+          ref={remoteVideoRef}
+          autoPlay
+          playsInline
+          className="absolute inset-0 w-full h-full object-contain bg-black"
+        />
 
         {/* Local Preview */}
-        <div className="absolute bottom-4 right-4 sm:bottom-6 sm:right-6 w-32 sm:w-40 aspect-video rounded-xl overflow-hidden border border-white/20 bg-black shadow-lg">
-          <video
-            ref={localVideoRef}
-            autoPlay
-            muted
-            playsInline
-            className="w-full h-full object-contain bg-black"
-          />
-        </div>
+        {localStream && (
+          <div className="absolute bottom-24 right-4 sm:right-6 w-32 sm:w-40 aspect-video rounded-xl overflow-hidden border border-white/20 bg-black shadow-xl">
+            <video
+              ref={localVideoRef}
+              autoPlay
+              muted
+              playsInline
+              className="w-full h-full object-contain bg-black"
+            />
+          </div>
+        )}
       </div>
 
       {/* ================= CONTROLS ================= */}
       <div
-        className="flex items-center justify-center gap-5 py-4
+        className="flex items-center justify-center gap-6 py-5
                    bg-black/80 backdrop-blur-md
                    pb-[env(safe-area-inset-bottom)]"
       >
-        {/* Mute */}
+        {/* Mic */}
         <button
           onClick={onMuteToggle}
-          className="w-12 h-12 rounded-full flex items-center justify-center bg-white/10 hover:bg-white/20 transition"
+          className={`w-12 h-12 rounded-full flex items-center justify-center transition
+            ${isMuted ? "bg-red-600" : "bg-white/10 hover:bg-white/20"}`}
         >
           {isMuted ? <MicOff /> : <Mic />}
         </button>
@@ -78,7 +96,8 @@ const VideoCall = ({
         {/* Camera */}
         <button
           onClick={onCameraToggle}
-          className="w-12 h-12 rounded-full flex items-center justify-center bg-white/10 hover:bg-white/20 transition"
+          className={`w-12 h-12 rounded-full flex items-center justify-center transition
+            ${isCameraOff ? "bg-red-600" : "bg-white/10 hover:bg-white/20"}`}
         >
           {isCameraOff ? <VideoOff /> : <Video />}
         </button>
@@ -88,23 +107,24 @@ const VideoCall = ({
           <>
             <button
               onClick={onAccept}
-              className="px-6 py-3 rounded-full bg-green-600 hover:bg-green-700 transition"
+              className="w-14 h-14 rounded-full bg-green-600 flex items-center justify-center hover:bg-green-700 transition"
             >
-              Accept
+              <PhoneIncoming />
             </button>
+
             <button
               onClick={onReject}
-              className="px-6 py-3 rounded-full bg-red-600 hover:bg-red-700 transition"
+              className="w-14 h-14 rounded-full bg-red-600 flex items-center justify-center hover:bg-red-700 transition"
             >
-              Reject
+              <PhoneOff />
             </button>
           </>
         ) : (
           <button
             onClick={onEnd}
-            className="w-14 h-14 rounded-full flex items-center justify-center bg-red-600 hover:bg-red-700 transition"
+            className="w-16 h-16 rounded-full bg-red-600 flex items-center justify-center hover:bg-red-700 transition"
           >
-            <PhoneOff />
+            <PhoneOff size={26} />
           </button>
         )}
       </div>

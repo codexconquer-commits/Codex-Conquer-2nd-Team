@@ -67,7 +67,7 @@ const VideoCall = ({
           ref={remoteVideoRef}
           autoPlay
           playsInline
-          className="absolute inset-0 w-full h-full object-cover"
+          className="absolute inset-0 w-full h-full object-contain bg-black"
         />
 
         {/* Local Preview (only after connected) */}

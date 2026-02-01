@@ -7,10 +7,15 @@ const socketHandler = (io) => {
     socket.on("add-user", (userId) => {
       if (!userId) return;
 
-      onlineUsers.set(userId.toString(), socket.id);
+      const key = userId.toString();
 
-      // sabko updated online users bhejo
-      io.emit("online-users", Array.from(onlineUsers.keys()));
+if (!onlineUsers.has(key)) {
+  onlineUsers.set(key, new Set());
+}
+
+onlineUsers.get(key).add(socket.id);
+
+io.emit("online-users", Array.from(onlineUsers.keys()));
     });
 
     // 🔹 Join chat room (1-to-1 OR Group)
@@ -38,14 +43,19 @@ const socketHandler = (io) => {
 
     // 🔹 User disconnect
     socket.on("disconnect", () => {
-      for (const [userId, socketId] of onlineUsers.entries()) {
-        if (socketId === socket.id) {
-          onlineUsers.delete(userId);
-          io.emit("online-users", Array.from(onlineUsers.keys()));
-          break;
-        }
+  for (const [userId, sockets] of onlineUsers.entries()) {
+    if (sockets.has(socket.id)) {
+      sockets.delete(socket.id);
+
+      if (sockets.size === 0) {
+        onlineUsers.delete(userId);
       }
-    });
+
+      io.emit("online-users", Array.from(onlineUsers.keys()));
+      break;
+    }
+  }
+});
 
 
 

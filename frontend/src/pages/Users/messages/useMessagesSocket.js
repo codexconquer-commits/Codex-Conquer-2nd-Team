@@ -8,11 +8,17 @@ const useMessagesSocket = ({
   setOnlineUsers,
 }) => {
   useEffect(() => {
+
+    const handleOnlineUser =(users)=>{
+      setOnlineUsers(users);
+    }
+
     socket.on("receive-message", (message) => {
       if (message.chatId === activeChat?._id) {
         setMessages((prev) => [...prev, message]);
       }
     });
+
 
     socket.on("typing", ({ senderName }) => {
       setTypingUser(senderName);
@@ -30,7 +36,7 @@ const useMessagesSocket = ({
       socket.off("receive-message");
       socket.off("typing");
       socket.off("stop-typing");
-      socket.off("online-users");
+      socket.off("online-users",handleOnlineUser);
     };
   }, [activeChat]);
 };

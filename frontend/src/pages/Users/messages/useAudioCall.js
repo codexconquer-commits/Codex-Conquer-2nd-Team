@@ -20,22 +20,23 @@ export default function useAudioCall(me) {
 
   /* ================= REMOTE AUDIO ================= */
   const attachRemoteAudio = (stream) => {
-    if (!remoteAudioRef.current) {
-      const audio = document.createElement("audio");
-      audio.autoplay = true;
-      audio.playsInline = true;
-      audio.muted = false;
-      document.body.appendChild(audio);
-      remoteAudioRef.current = audio;
-    }
+  if (!remoteAudioRef.current) {
+    const audio = document.createElement("audio");
+    audio.autoplay = false; // 🔥 important
+    audio.playsInline = true;
+    audio.muted = false;
 
-    remoteAudioRef.current.srcObject = stream;
+    // mobile safe (NOT display:none)
+    audio.style.position = "fixed";
+    audio.style.top = "-1000px";
+    audio.style.left = "-1000px";
 
-    // mobile autoplay safety
-    setTimeout(() => {
-      remoteAudioRef.current?.play().catch(() => {});
-    }, 100);
-  };
+    document.body.appendChild(audio);
+    remoteAudioRef.current = audio;
+  }
+
+  remoteAudioRef.current.srcObject = stream;
+};
 
   /* ================= CLEANUP ================= */
   const cleanup = () => {
@@ -98,52 +99,68 @@ export default function useAudioCall(me) {
   };
 
   /* ================= ACCEPT CALL (CALLEE) ================= */
+
+
   const acceptAudioCall = async () => {
-    if (!incomingCall) return;
+  if (!incomingCall) return;
 
-    const { offer, fromUser } = incomingCall;
-    isCallerRef.current = false;
-    setCaller(fromUser);
+  const { offer, fromUser } = incomingCall;
+  isCallerRef.current = false;
+  setCaller(fromUser);
 
-    const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-    localStreamRef.current = stream;
+  // 🎤 Get mic access (user gesture = Accept button)
+  const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+  localStreamRef.current = stream;
 
-    const pc = new RTCPeerConnection(RTC_CONFIG);
-    pcRef.current = pc;
+  const pc = new RTCPeerConnection(RTC_CONFIG);
+  pcRef.current = pc;
 
-    pc.ontrack = (e) => attachRemoteAudio(e.streams[0]);
+  pc.ontrack = (e) => {
+    attachRemoteAudio(e.streams[0]);
 
-    pc.onicecandidate = (e) => {
-      if (e.candidate) {
-        socket.emit("ice-candidate", {
-          toUserId: fromUser._id,
-          candidate: e.candidate,
-        });
-      }
-    };
-
-    stream.getTracks().forEach((t) => pc.addTrack(t, stream));
-
-    await pc.setRemoteDescription(offer);
-
-    // apply queued ICE
-    pendingCandidatesRef.current.forEach((c) =>
-      pc.addIceCandidate(c)
-    );
-    pendingCandidatesRef.current = [];
-
-    const answer = await pc.createAnswer();
-    await pc.setLocalDescription(answer);
-
-    socket.emit("accept-call", {
-      toUserId: fromUser._id,
-      answer,
-    });
-
-    setIsCallConnected(true);
-    setIncomingCall(null);
-    setIsCallOpen(true);
+    // 🔥 MOBILE FIX: play audio inside user gesture context
+    setTimeout(() => {
+      remoteAudioRef.current?.play().catch(() => {});
+    }, 0);
   };
+
+  pc.onicecandidate = (e) => {
+    if (e.candidate) {
+      socket.emit("ice-candidate", {
+        toUserId: fromUser._id,
+        candidate: e.candidate,
+      });
+    }
+  };
+
+  stream.getTracks().forEach((t) => pc.addTrack(t, stream));
+
+  await pc.setRemoteDescription(offer);
+
+  // apply queued ICE
+  pendingCandidatesRef.current.forEach((c) =>
+    pc.addIceCandidate(c)
+  );
+  pendingCandidatesRef.current = [];
+
+  const answer = await pc.createAnswer();
+  await pc.setLocalDescription(answer);
+
+  socket.emit("accept-call", {
+    toUserId: fromUser._id,
+    answer,
+  });
+
+  setIsCallConnected(true);
+  setIncomingCall(null);
+  setIsCallOpen(true);
+
+  // 🔥 EXTRA SAFETY (some phones need this)
+  setTimeout(() => {
+    remoteAudioRef.current?.play().catch(() => {});
+  }, 200);
+};
+
 
   /* ================= REJECT CALL ================= */
   const rejectAudioCall = () => {
@@ -234,5 +251,5 @@ export default function useAudioCall(me) {
     endAudioCall,
     toggleMute,
   };
-  
+
 }

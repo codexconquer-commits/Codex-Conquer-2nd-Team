@@ -9,18 +9,20 @@ const RTC_CONFIG = {
   ],
 };
 
-/* ================= VIDEO QUALITY (NO ZOOM, HD) ================= */
+/* ================= SAFE VIDEO CONSTRAINTS ================= */
 const VIDEO_CONSTRAINTS = {
-  width: { ideal: 1280, max: 1280 },
-  height: { ideal: 720, max: 720 },
-  frameRate: { ideal: 30, max: 30 },
-  facingMode: "user", // 🔥 FRONT CAMERA (mobile zoom fix)
+  width: { ideal: 1280 },
+  height: { ideal: 720 },
+  aspectRatio: { ideal: 16 / 9 },
+  frameRate: { ideal: 30 },
+  facingMode: "user",
 };
 
 export default function useVideoCall(me) {
   const pcRef = useRef(null);
   const localStreamRef = useRef(null);
   const remoteVideoRef = useRef(null);
+  const remoteAudioRef = useRef(null);
   const pendingCandidatesRef = useRef([]);
   const peerUserRef = useRef(null);
   const isCallerRef = useRef(false);
@@ -32,6 +34,23 @@ export default function useVideoCall(me) {
   const [isMuted, setIsMuted] = useState(false);
   const [isCameraOff, setIsCameraOff] = useState(false);
 
+  /* ================= ATTACH REMOTE AUDIO ================= */
+  const attachRemoteAudio = (stream) => {
+    if (!remoteAudioRef.current) {
+      const audio = document.createElement("audio");
+      audio.autoplay = true;
+      audio.playsInline = true;
+      audio.muted = false;
+      document.body.appendChild(audio);
+      remoteAudioRef.current = audio;
+    }
+
+    remoteAudioRef.current.srcObject = stream;
+    remoteAudioRef.current.play().catch(() => {
+      console.warn("🔇 Autoplay blocked (needs user interaction)");
+    });
+  };
+
   /* ================= REGISTER REMOTE VIDEO ================= */
   const registerRemoteElement = (el) => {
     remoteVideoRef.current = el;
@@ -39,11 +58,15 @@ export default function useVideoCall(me) {
 
   /* ================= CLEANUP ================= */
   const cleanup = () => {
-    localStreamRef.current?.getTracks().forEach((t) => t.stop());
+    localStreamRef.current?.getTracks().forEach(t => t.stop());
     pcRef.current?.close();
 
     if (remoteVideoRef.current) {
       remoteVideoRef.current.srcObject = null;
+    }
+
+    if (remoteAudioRef.current) {
+      remoteAudioRef.current.srcObject = null;
     }
 
     pcRef.current = null;
@@ -66,9 +89,13 @@ export default function useVideoCall(me) {
     pcRef.current = pc;
 
     pc.ontrack = (e) => {
+      const stream = e.streams[0];
+
       if (remoteVideoRef.current) {
-        remoteVideoRef.current.srcObject = e.streams[0];
+        remoteVideoRef.current.srcObject = stream;
       }
+
+      attachRemoteAudio(stream);
     };
 
     pc.onicecandidate = (e) => {
@@ -96,13 +123,7 @@ export default function useVideoCall(me) {
     localStreamRef.current = stream;
 
     const pc = createPeer(otherUser._id);
-    stream.getTracks().forEach((t) => pc.addTrack(t, stream));
-
-    // 🔥 Quality boost
-    const sender = pc.getSenders().find((s) => s.track?.kind === "video");
-    sender?.setParameters({
-      encodings: [{ maxBitrate: 2_500_000 }],
-    });
+    stream.getTracks().forEach(t => pc.addTrack(t, stream));
 
     const offer = await pc.createOffer();
     await pc.setLocalDescription(offer);
@@ -115,7 +136,6 @@ export default function useVideoCall(me) {
 
     setCaller(otherUser);
     setIsCallOpen(true);
-
     return stream;
   };
 
@@ -134,12 +154,13 @@ export default function useVideoCall(me) {
     localStreamRef.current = stream;
 
     const pc = createPeer(incomingCall.fromUser._id);
-    stream.getTracks().forEach((t) => pc.addTrack(t, stream));
+    stream.getTracks().forEach(t => pc.addTrack(t, stream));
+
+    if (pc.signalingState !== "stable") return;
 
     await pc.setRemoteDescription(incomingCall.offer);
 
-    // 🔥 Apply queued ICE
-    pendingCandidatesRef.current.forEach((c) =>
+    pendingCandidatesRef.current.forEach(c =>
       pc.addIceCandidate(new RTCIceCandidate(c))
     );
     pendingCandidatesRef.current = [];
@@ -169,6 +190,18 @@ export default function useVideoCall(me) {
     cleanup();
   };
 
+  /* ================= REJECT VIDEO CALL ================= */
+  const rejectVideoCall = () => {
+    if (incomingCall?.fromUser?._id) {
+      socket.emit("reject-video-call", {
+        toUserId: incomingCall.fromUser._id,
+        fromUserId: me?._id,
+        reason: "rejected",
+      });
+    }
+    cleanup();
+  };
+
   /* ================= CONTROLS ================= */
   const toggleMute = () => {
     const t = localStreamRef.current?.getAudioTracks()[0];
@@ -184,28 +217,30 @@ export default function useVideoCall(me) {
     setIsCameraOff(!t.enabled);
   };
 
-  /* ================= SOCKET LISTENERS ================= */
+  /* ================= SOCKET EVENTS ================= */
   useEffect(() => {
-    socket.on("incoming-video-call", (data) => {
+    const onIncoming = (data) => {
       setIncomingCall(data);
       setCaller(data.fromUser);
       setIsCallOpen(true);
-    });
+      setIsCallConnected(false);
+    };
 
-    socket.on("video-call-accepted", async ({ answer }) => {
+    const onAccepted = async ({ answer }) => {
       if (!isCallerRef.current || !pcRef.current) return;
+      if (pcRef.current.signalingState !== "have-local-offer") return;
 
       await pcRef.current.setRemoteDescription(answer);
 
-      pendingCandidatesRef.current.forEach((c) =>
+      pendingCandidatesRef.current.forEach(c =>
         pcRef.current.addIceCandidate(new RTCIceCandidate(c))
       );
       pendingCandidatesRef.current = [];
 
       setIsCallConnected(true);
-    });
+    };
 
-    socket.on("video-ice-candidate", ({ candidate }) => {
+    const onIce = ({ candidate }) => {
       if (!pcRef.current || !candidate) return;
 
       if (pcRef.current.remoteDescription) {
@@ -213,11 +248,24 @@ export default function useVideoCall(me) {
       } else {
         pendingCandidatesRef.current.push(candidate);
       }
-    });
+    };
 
-    socket.on("video-call-ended", cleanup);
+    const onEnd = () => cleanup();
+    const onReject = () => cleanup();
 
-    return () => socket.offAny();
+    socket.on("incoming-video-call", onIncoming);
+    socket.on("video-call-accepted", onAccepted);
+    socket.on("video-ice-candidate", onIce);
+    socket.on("video-call-ended", onEnd);
+    socket.on("video-call-rejected", onReject);
+
+    return () => {
+      socket.off("incoming-video-call", onIncoming);
+      socket.off("video-call-accepted", onAccepted);
+      socket.off("video-ice-candidate", onIce);
+      socket.off("video-call-ended", onEnd);
+      socket.off("video-call-rejected", onReject);
+    };
   }, []);
 
   return {
@@ -229,6 +277,7 @@ export default function useVideoCall(me) {
     isCameraOff,
     startVideoCall,
     acceptVideoCall,
+    rejectVideoCall,
     endVideoCall,
     toggleMute,
     toggleCamera,

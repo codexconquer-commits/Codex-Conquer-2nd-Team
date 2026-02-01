@@ -71,17 +71,19 @@ const VideoCall = ({
         />
 
         {/* Local Preview (only after connected) */}
-        {isConnected && localStream && (
-          <div className="absolute bottom-28 right-4 z-30 w-28 sm:w-36 aspect-video rounded-xl overflow-hidden border border-white/20 bg-black shadow-xl pointer-events-none">
-            <video
-              ref={localVideoRef}
-              autoPlay
-              muted
-              playsInline
-              className="w-full h-full object-cover"
-            />
-          </div>
-        )}
+        {localStream && (
+  <div className="absolute bottom-28 right-4 z-30 w-28 sm:w-36 aspect-video
+                  rounded-xl overflow-hidden border border-white/20
+                  bg-black shadow-xl pointer-events-none">
+    <video
+      ref={localVideoRef}
+      autoPlay
+      muted
+      playsInline
+      className="w-full h-full object-contain bg-black"
+    />
+  </div>
+)}
       </div>
 
       {/* ================= CONTROLS ================= */}

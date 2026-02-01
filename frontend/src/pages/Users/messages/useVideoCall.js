@@ -9,28 +9,26 @@ const RTC_CONFIG = {
   ],
 };
 
-/* ================= DEFAULT VIDEO ================= */
-const getVideoConstraints = (facingMode = "user") => ({
-  width: { ideal: 1280 },
-  height: { ideal: 720 },
-  frameRate: { ideal: 30 },
-  facingMode,
-});
+/* ================= VIDEO QUALITY (NO ZOOM, HD) ================= */
+const VIDEO_CONSTRAINTS = {
+  width: { ideal: 1280, max: 1280 },
+  height: { ideal: 720, max: 720 },
+  frameRate: { ideal: 30, max: 30 },
+  facingMode: "user", // 🔥 FRONT CAMERA (mobile zoom fix)
+};
 
 export default function useVideoCall(me) {
   const pcRef = useRef(null);
   const localStreamRef = useRef(null);
   const remoteVideoRef = useRef(null);
-  const peerUserRef = useRef(null);
   const pendingCandidatesRef = useRef([]);
+  const peerUserRef = useRef(null);
   const isCallerRef = useRef(false);
-  const facingModeRef = useRef("user"); // user | environment
 
-  /* ================= STATE ================= */
   const [isCallOpen, setIsCallOpen] = useState(false);
   const [isCallConnected, setIsCallConnected] = useState(false);
-  const [incomingCall, setIncomingCall] = useState(null);
   const [caller, setCaller] = useState(null);
+  const [incomingCall, setIncomingCall] = useState(null);
   const [isMuted, setIsMuted] = useState(false);
   const [isCameraOff, setIsCameraOff] = useState(false);
 
@@ -50,8 +48,8 @@ export default function useVideoCall(me) {
 
     pcRef.current = null;
     localStreamRef.current = null;
-    peerUserRef.current = null;
     pendingCandidatesRef.current = [];
+    peerUserRef.current = null;
     isCallerRef.current = false;
 
     setIsCallOpen(false);
@@ -85,24 +83,26 @@ export default function useVideoCall(me) {
     return pc;
   };
 
-  /* ================= GET MEDIA ================= */
-  const getMediaStream = async () => {
-    return navigator.mediaDevices.getUserMedia({
-      audio: true,
-      video: getVideoConstraints(facingModeRef.current),
-    });
-  };
-
-  /* ================= START CALL ================= */
+  /* ================= START VIDEO CALL ================= */
   const startVideoCall = async (otherUser) => {
     peerUserRef.current = otherUser;
     isCallerRef.current = true;
 
-    const stream = await getMediaStream();
+    const stream = await navigator.mediaDevices.getUserMedia({
+      audio: true,
+      video: VIDEO_CONSTRAINTS,
+    });
+
     localStreamRef.current = stream;
 
     const pc = createPeer(otherUser._id);
     stream.getTracks().forEach((t) => pc.addTrack(t, stream));
+
+    // 🔥 Quality boost
+    const sender = pc.getSenders().find((s) => s.track?.kind === "video");
+    sender?.setParameters({
+      encodings: [{ maxBitrate: 2_500_000 }],
+    });
 
     const offer = await pc.createOffer();
     await pc.setLocalDescription(offer);
@@ -119,14 +119,18 @@ export default function useVideoCall(me) {
     return stream;
   };
 
-  /* ================= ACCEPT CALL ================= */
+  /* ================= ACCEPT VIDEO CALL ================= */
   const acceptVideoCall = async () => {
     if (!incomingCall) return;
 
     peerUserRef.current = incomingCall.fromUser;
     isCallerRef.current = false;
 
-    const stream = await getMediaStream();
+    const stream = await navigator.mediaDevices.getUserMedia({
+      audio: true,
+      video: VIDEO_CONSTRAINTS,
+    });
+
     localStreamRef.current = stream;
 
     const pc = createPeer(incomingCall.fromUser._id);
@@ -134,6 +138,7 @@ export default function useVideoCall(me) {
 
     await pc.setRemoteDescription(incomingCall.offer);
 
+    // 🔥 Apply queued ICE
     pendingCandidatesRef.current.forEach((c) =>
       pc.addIceCandidate(new RTCIceCandidate(c))
     );
@@ -147,26 +152,16 @@ export default function useVideoCall(me) {
       answer,
     });
 
-    setIncomingCall(null);
     setIsCallConnected(true);
     setIsCallOpen(true);
+    setIncomingCall(null);
 
     return stream;
   };
 
-  /* ================= REJECT CALL ================= */
-  const rejectVideoCall = () => {
-    if (incomingCall?.fromUser?._id) {
-      socket.emit("reject-video-call", {
-        toUserId: incomingCall.fromUser._id,
-      });
-    }
-    cleanup();
-  };
-
   /* ================= END CALL ================= */
   const endVideoCall = () => {
-    if (peerUserRef.current?._id) {
+    if (peerUserRef.current) {
       socket.emit("end-video-call", {
         toUserId: peerUserRef.current._id,
       });
@@ -174,47 +169,22 @@ export default function useVideoCall(me) {
     cleanup();
   };
 
-  /* ================= TOGGLES ================= */
+  /* ================= CONTROLS ================= */
   const toggleMute = () => {
-    const track = localStreamRef.current?.getAudioTracks()[0];
-    if (!track) return;
-    track.enabled = !track.enabled;
-    setIsMuted(!track.enabled);
+    const t = localStreamRef.current?.getAudioTracks()[0];
+    if (!t) return;
+    t.enabled = !t.enabled;
+    setIsMuted(!t.enabled);
   };
 
   const toggleCamera = () => {
-    const track = localStreamRef.current?.getVideoTracks()[0];
-    if (!track) return;
-    track.enabled = !track.enabled;
-    setIsCameraOff(!track.enabled);
+    const t = localStreamRef.current?.getVideoTracks()[0];
+    if (!t) return;
+    t.enabled = !t.enabled;
+    setIsCameraOff(!t.enabled);
   };
 
-  /* ================= SWITCH CAMERA ================= */
-  const switchCamera = async () => {
-    if (!localStreamRef.current) return;
-
-    facingModeRef.current =
-      facingModeRef.current === "user" ? "environment" : "user";
-
-    const newStream = await getMediaStream();
-    const newVideoTrack = newStream.getVideoTracks()[0];
-
-    const sender = pcRef.current
-      ?.getSenders()
-      .find((s) => s.track?.kind === "video");
-
-    if (sender) {
-      await sender.replaceTrack(newVideoTrack);
-    }
-
-    localStreamRef.current.getVideoTracks().forEach((t) => t.stop());
-    localStreamRef.current.removeTrack(
-      localStreamRef.current.getVideoTracks()[0]
-    );
-    localStreamRef.current.addTrack(newVideoTrack);
-  };
-
-  /* ================= SOCKET EVENTS ================= */
+  /* ================= SOCKET LISTENERS ================= */
   useEffect(() => {
     socket.on("incoming-video-call", (data) => {
       setIncomingCall(data);
@@ -236,9 +206,9 @@ export default function useVideoCall(me) {
     });
 
     socket.on("video-ice-candidate", ({ candidate }) => {
-      if (!candidate) return;
+      if (!pcRef.current || !candidate) return;
 
-      if (pcRef.current?.remoteDescription) {
+      if (pcRef.current.remoteDescription) {
         pcRef.current.addIceCandidate(new RTCIceCandidate(candidate));
       } else {
         pendingCandidatesRef.current.push(candidate);
@@ -250,21 +220,18 @@ export default function useVideoCall(me) {
     return () => socket.offAny();
   }, []);
 
-  /* ================= EXPORT ================= */
   return {
     isCallOpen,
     isCallConnected,
-    incomingCall,
     caller,
+    incomingCall,
     isMuted,
     isCameraOff,
     startVideoCall,
     acceptVideoCall,
-    rejectVideoCall,
     endVideoCall,
     toggleMute,
     toggleCamera,
-    switchCamera,
     registerRemoteElement,
   };
 }

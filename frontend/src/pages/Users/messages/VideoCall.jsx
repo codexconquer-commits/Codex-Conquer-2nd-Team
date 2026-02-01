@@ -11,7 +11,7 @@ import { useEffect, useRef } from "react";
 const VideoCall = ({
   open,
   isConnected,
-  callerName,
+  callerName = "User",
   isIncoming,
   isMuted,
   isCameraOff,
@@ -31,48 +31,54 @@ const VideoCall = ({
     if (localVideoRef.current && localStream) {
       localVideoRef.current.srcObject = localStream;
     }
+
+    return () => {
+      if (localVideoRef.current) {
+        localVideoRef.current.srcObject = null;
+      }
+    };
   }, [localStream]);
 
   /* Register remote video */
   useEffect(() => {
-    if (remoteVideoRef.current) {
+    if (open && remoteVideoRef.current) {
       registerRemoteElement(remoteVideoRef.current);
     }
-  }, [registerRemoteElement]);
+  }, [open, registerRemoteElement]);
 
   if (!open) return null;
 
   return (
-    <div className="fixed inset-0 z-50 bg-black text-white flex flex-col">
+    <div className="fixed inset-0 z-[9999] bg-black text-white flex flex-col">
       {/* ================= HEADER ================= */}
-      <div className="absolute top-0 left-0 right-0 z-20 p-4 flex flex-col items-center">
-        <div className="text-lg font-semibold">{callerName}</div>
+      <div className="absolute top-4 left-0 right-0 z-40 text-center pointer-events-none">
+        <div className="text-lg font-semibold truncate">{callerName}</div>
         <div className="text-sm opacity-70">
           {isIncoming && !isConnected && "Incoming video call"}
           {!isIncoming && !isConnected && "Calling…"}
-          {isConnected && "Video call connected"}
+          {isConnected && "Connected"}
         </div>
       </div>
 
       {/* ================= VIDEO AREA ================= */}
-      <div className="flex-1 relative bg-black">
+      <div className="flex-1 relative bg-black pointer-events-none">
         {/* Remote Video */}
         <video
           ref={remoteVideoRef}
           autoPlay
           playsInline
-          className="absolute inset-0 w-full h-full object-contain bg-black"
+          className="absolute inset-0 w-full h-full object-cover bg-black"
         />
 
-        {/* Local Preview */}
-        {localStream && (
-          <div className="absolute bottom-24 right-4 sm:right-6 w-32 sm:w-40 aspect-video rounded-xl overflow-hidden border border-white/20 bg-black shadow-xl">
+        {/* Local Preview (only after connected) */}
+        {isConnected && localStream && (
+          <div className="absolute bottom-28 right-4 z-30 w-28 sm:w-36 aspect-video rounded-xl overflow-hidden border border-white/20 bg-black shadow-xl pointer-events-none">
             <video
               ref={localVideoRef}
               autoPlay
               muted
               playsInline
-              className="w-full h-full object-contain bg-black"
+              className="w-full h-full object-cover"
             />
           </div>
         )}
@@ -80,15 +86,18 @@ const VideoCall = ({
 
       {/* ================= CONTROLS ================= */}
       <div
-        className="flex items-center justify-center gap-6 py-5
+        className="relative z-50 flex items-center justify-center gap-6 py-5
                    bg-black/80 backdrop-blur-md
-                   pb-[env(safe-area-inset-bottom)]"
+                   pointer-events-auto
+                   pb-[calc(env(safe-area-inset-bottom)+12px)]"
       >
-        {/* Mic */}
+        {/* Mute */}
         <button
           onClick={onMuteToggle}
+          disabled={!isConnected}
           className={`w-12 h-12 rounded-full flex items-center justify-center transition
-            ${isMuted ? "bg-red-600" : "bg-white/10 hover:bg-white/20"}`}
+          ${isMuted ? "bg-red-600" : "bg-white/15 hover:bg-white/25"}
+          ${!isConnected && "opacity-50"}`}
         >
           {isMuted ? <MicOff /> : <Mic />}
         </button>
@@ -96,8 +105,10 @@ const VideoCall = ({
         {/* Camera */}
         <button
           onClick={onCameraToggle}
+          disabled={!isConnected}
           className={`w-12 h-12 rounded-full flex items-center justify-center transition
-            ${isCameraOff ? "bg-red-600" : "bg-white/10 hover:bg-white/20"}`}
+          ${isCameraOff ? "bg-red-600" : "bg-white/15 hover:bg-white/25"}
+          ${!isConnected && "opacity-50"}`}
         >
           {isCameraOff ? <VideoOff /> : <Video />}
         </button>
@@ -107,16 +118,16 @@ const VideoCall = ({
           <>
             <button
               onClick={onAccept}
-              className="w-14 h-14 rounded-full bg-green-600 flex items-center justify-center hover:bg-green-700 transition"
+              className="w-16 h-16 rounded-full bg-green-600 flex items-center justify-center hover:bg-green-700 transition"
             >
-              <PhoneIncoming />
+              <PhoneIncoming size={28} />
             </button>
 
             <button
               onClick={onReject}
-              className="w-14 h-14 rounded-full bg-red-600 flex items-center justify-center hover:bg-red-700 transition"
+              className="w-16 h-16 rounded-full bg-red-600 flex items-center justify-center hover:bg-red-700 transition"
             >
-              <PhoneOff />
+              <PhoneOff size={28} />
             </button>
           </>
         ) : (
@@ -124,7 +135,7 @@ const VideoCall = ({
             onClick={onEnd}
             className="w-16 h-16 rounded-full bg-red-600 flex items-center justify-center hover:bg-red-700 transition"
           >
-            <PhoneOff size={26} />
+            <PhoneOff size={28} />
           </button>
         )}
       </div>

@@ -1,38 +1,45 @@
-const onlineUsers = new Map();
+const onlineUsers = new Map(); // userId -> Set(socketId)
+
+/* 🔁 Helper: emit event to all sockets of a user */
+const emitToUser = (io, userId, event, payload) => {
+  const sockets = onlineUsers.get(userId?.toString());
+  if (!sockets) return;
+
+  for (const socketId of sockets) {
+    io.to(socketId).emit(event, payload);
+  }
+};
 
 const socketHandler = (io) => {
   io.on("connection", (socket) => {
 
-    // 🔹 User comes online
+    /* ================= USER ONLINE ================= */
     socket.on("add-user", (userId) => {
       if (!userId) return;
 
       const key = userId.toString();
 
-if (!onlineUsers.has(key)) {
-  onlineUsers.set(key, new Set());
-}
+      if (!onlineUsers.has(key)) {
+        onlineUsers.set(key, new Set());
+      }
 
-onlineUsers.get(key).add(socket.id);
+      onlineUsers.get(key).add(socket.id);
 
-io.emit("online-users", Array.from(onlineUsers.keys()));
+      io.emit("online-users", Array.from(onlineUsers.keys()));
     });
 
-    // 🔹 Join chat room (1-to-1 OR Group)
+    /* ================= JOIN CHAT ================= */
     socket.on("join-chat", (chatId) => {
       if (!chatId) return;
       socket.join(chatId);
     });
 
-    // 🔥 SEND MESSAGE (WORKS FOR BOTH GROUP & 1-TO-1)
+    /* ================= MESSAGES ================= */
     socket.on("send-message", ({ chatId, message }) => {
       if (!chatId || !message) return;
-
-      // sender ke alawa sabko message mile
       socket.to(chatId).emit("receive-message", message);
     });
 
-    // 🔹 Typing indicator
     socket.on("typing", ({ chatId, senderName }) => {
       socket.to(chatId).emit("typing", { senderName });
     });
@@ -41,121 +48,64 @@ io.emit("online-users", Array.from(onlineUsers.keys()));
       socket.to(chatId).emit("stop-typing");
     });
 
-    // 🔹 User disconnect
+    /* ================= DISCONNECT ================= */
     socket.on("disconnect", () => {
-  for (const [userId, sockets] of onlineUsers.entries()) {
-    if (sockets.has(socket.id)) {
-      sockets.delete(socket.id);
+      for (const [userId, sockets] of onlineUsers.entries()) {
+        if (sockets.has(socket.id)) {
+          sockets.delete(socket.id);
 
-      if (sockets.size === 0) {
-        onlineUsers.delete(userId);
+          if (sockets.size === 0) {
+            onlineUsers.delete(userId);
+          }
+
+          io.emit("online-users", Array.from(onlineUsers.keys()));
+          break;
+        }
       }
-
-      io.emit("online-users", Array.from(onlineUsers.keys()));
-      break;
-    }
-  }
-});
-
-
-
-// 📞 CALL USER
-socket.on("call-user", ({ toUserId, offer, fromUser }) => {
-  const targetSocketId = onlineUsers.get(toUserId);
-  if (targetSocketId) {
-    io.to(targetSocketId).emit("incoming-call", {
-      offer,
-      fromUser,
     });
-  }
-});
 
-// ✅ ACCEPT CALL
-socket.on("accept-call", ({ toUserId, answer }) => {
-  const targetSocketId = onlineUsers.get(toUserId);
-  if (targetSocketId) {
-    io.to(targetSocketId).emit("call-accepted", {
-      answer,
+    /* ================= AUDIO CALL ================= */
+    socket.on("call-user", ({ toUserId, offer, fromUser }) => {
+      emitToUser(io, toUserId, "incoming-call", { offer, fromUser });
     });
-  }
-});
 
-// ❌ REJECT CALL
-socket.on("reject-call", ({ toUserId }) => {
-  const targetSocketId = onlineUsers.get(toUserId);
-  if (targetSocketId) {
-    io.to(targetSocketId).emit("call-rejected");
-  }
-});
-
-// 🌐 ICE CANDIDATE
-socket.on("ice-candidate", ({ toUserId, candidate }) => {
-  const targetSocketId = onlineUsers.get(toUserId);
-  if (targetSocketId) {
-    io.to(targetSocketId).emit("ice-candidate", {
-      candidate,
+    socket.on("accept-call", ({ toUserId, answer }) => {
+      emitToUser(io, toUserId, "call-accepted", { answer });
     });
-  }
-});
 
-// 🛑 END CALL
-socket.on("end-call", ({ toUserId }) => {
-  const targetSocketId = onlineUsers.get(toUserId);
-  if (targetSocketId) {
-    io.to(targetSocketId).emit("call-ended");
-  }
-});
-
-
-
-// 📹 VIDEO CALL - CALL USER
-socket.on("call-user-video", ({ toUserId, offer, fromUser }) => {
-  const targetSocketId = onlineUsers.get(toUserId);
-  if (targetSocketId) {
-    io.to(targetSocketId).emit("incoming-video-call", {
-      offer,
-      fromUser,
+    socket.on("reject-call", ({ toUserId }) => {
+      emitToUser(io, toUserId, "call-rejected");
     });
-  }
-});
 
-// ✅ VIDEO CALL ACCEPTED
-socket.on("accept-video-call", ({ toUserId, answer }) => {
-  const targetSocketId = onlineUsers.get(toUserId);
-  if (targetSocketId) {
-    io.to(targetSocketId).emit("video-call-accepted", {
-      answer,
+    socket.on("ice-candidate", ({ toUserId, candidate }) => {
+      emitToUser(io, toUserId, "ice-candidate", { candidate });
     });
-  }
-});
 
-// ❌ VIDEO CALL REJECTED
-socket.on("reject-video-call", ({ toUserId }) => {
-  const targetSocketId = onlineUsers.get(toUserId);
-  if (targetSocketId) {
-    io.to(targetSocketId).emit("video-call-rejected");
-  }
-});
-
-// 🌐 VIDEO ICE CANDIDATE
-socket.on("video-ice-candidate", ({ toUserId, candidate }) => {
-  const targetSocketId = onlineUsers.get(toUserId);
-  if (targetSocketId) {
-    io.to(targetSocketId).emit("video-ice-candidate", {
-      candidate,
+    socket.on("end-call", ({ toUserId }) => {
+      emitToUser(io, toUserId, "call-ended");
     });
-  }
-});
 
-// 🛑 END VIDEO CALL
-socket.on("end-video-call", ({ toUserId }) => {
-  const targetSocketId = onlineUsers.get(toUserId);
-  if (targetSocketId) {
-    io.to(targetSocketId).emit("video-call-ended");
-  }
-});
+    /* ================= VIDEO CALL ================= */
+    socket.on("call-user-video", ({ toUserId, offer, fromUser }) => {
+      emitToUser(io, toUserId, "incoming-video-call", { offer, fromUser });
+    });
 
-});
+    socket.on("accept-video-call", ({ toUserId, answer }) => {
+      emitToUser(io, toUserId, "video-call-accepted", { answer });
+    });
+
+    socket.on("reject-video-call", ({ toUserId }) => {
+      emitToUser(io, toUserId, "video-call-rejected");
+    });
+
+    socket.on("video-ice-candidate", ({ toUserId, candidate }) => {
+      emitToUser(io, toUserId, "video-ice-candidate", { candidate });
+    });
+
+    socket.on("end-video-call", ({ toUserId }) => {
+      emitToUser(io, toUserId, "video-call-ended");
+    });
+  });
 };
 
 export default socketHandler;

@@ -7,38 +7,48 @@ const useMessagesSocket = ({
   setTypingUser,
   setOnlineUsers,
 }) => {
+
+  // 🌐 ONLINE USERS (GLOBAL)
   useEffect(() => {
-
-    const handleOnlineUser =(users)=>{
+    const handleOnlineUser = (users) => {
       setOnlineUsers(users);
-    }
+    };
 
-    socket.on("receive-message", (message) => {
-      if (message.chatId === activeChat?._id) {
-        setMessages((prev) => [...prev, message]);
-      }
-    });
-
-
-    socket.on("typing", ({ senderName }) => {
-      setTypingUser(senderName);
-    });
-
-    socket.on("stop-typing", () => {
-      setTypingUser("");
-    });
-
-    socket.on("online-users", (users) => {
-      setOnlineUsers(users);
-    });
+    socket.on("online-users", handleOnlineUser);
 
     return () => {
-      socket.off("receive-message");
-      socket.off("typing");
-      socket.off("stop-typing");
-      socket.off("online-users",handleOnlineUser);
+      socket.off("online-users", handleOnlineUser);
     };
-  }, [activeChat]);
+  }, []);
+
+  // 💬 CHAT EVENTS (CHAT DEPENDENT)
+  useEffect(() => {
+    if (!activeChat?._id) return;
+
+    const handleMessage = (message) => {
+      if (message.chatId === activeChat._id) {
+        setMessages((prev) => [...prev, message]);
+      }
+    };
+
+    const handleTyping = ({ senderName }) => {
+      setTypingUser(senderName);
+    };
+
+    const handleStopTyping = () => {
+      setTypingUser("");
+    };
+
+    socket.on("receive-message", handleMessage);
+    socket.on("typing", handleTyping);
+    socket.on("stop-typing", handleStopTyping);
+
+    return () => {
+      socket.off("receive-message", handleMessage);
+      socket.off("typing", handleTyping);
+      socket.off("stop-typing", handleStopTyping);
+    };
+  }, [activeChat?._id]);
 };
 
 export default useMessagesSocket;

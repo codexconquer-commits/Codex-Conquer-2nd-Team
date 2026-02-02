@@ -56,9 +56,9 @@
         <!-- HEADER -->
         <p>
             <b>CodexConquer</b><br>
-            123 Business Avenue, Suite 100<br>
+            <!--123 Business Avenue, Suite 100<br>
             New York, NY 10001<br>
-            Phone: (555) 123-4567 | Email: hr@codexconquer.com
+            Phone: (555) 123-4567 |--> www.codexconquer.com
         </p>
 
         <hr style="border:1px solid #2563eb; margin:15px 0 30px;">
@@ -75,7 +75,7 @@
         <p>Dear {{ name }},</p>
 
         <!-- BODY -->
-        <div id="letterBody">
+        <!--<div id="letterBody">
 
         {% if letter_type == "Relieving Letter" %}
 
@@ -114,7 +114,66 @@
 
         {% endif %}
 
-        </div>
+        </div>-->
+        <div id="letterBody">
+
+{% if draft_content %}
+    {{ draft_content | safe }}
+
+{% elif body %}
+    {{ body | safe }}
+
+{% else %}
+
+    {% if letter_type == "Relieving Letter" %}
+        <p>
+            This is to formally acknowledge that you have completed your Internship
+            tenure with <strong>CodeXConquer</strong> from
+            <strong>{{ joining_date }}</strong> to
+            <strong>{{ relieving_date }}</strong>,
+            as a <strong>{{ designation }}</strong>.
+        </p>
+
+        <p>
+            During this period, you demonstrated professionalism, willingness to learn,
+            and a positive work attitude.
+        </p>
+
+        <p>
+            We appreciate your efforts and commitment during your internship.
+        </p>
+
+        <p>
+            If you need any documents or verification, please contact us.
+        </p>
+
+        {% elif letter_type == "Termination Letter" %}
+            <p>
+This letter is to formally inform you that your employment with codexconquer is terminated effective {{ today }}.
+</p>
+<p>This decision has been taken after careful consideration and is based on performance issues / violation of company policy / organizational restructuring, as discussed with you earlier.</p>
+<p>
+You are requested to complete all exit formalities and hand over company property, documents, and access credentials to HR / Reporting Manager on or before your last working day.
+</p>
+<p>Your final settlement, including any dues or recoveries as per company policy, will be processed and communicated to you separately.</p>
+<p>We thank you for your contributions to the company and wish you all the best in your future endeavors.</p>
+
+
+{% elif letter_type == "Appreciation Letter" %}
+<P>I am pleased to write this letter of recommendation for <strong>{{name}}</strong>, who successfully completed their internship with <strong>Codexconquer</strong> as a {{ designation }} from {{ joining_date }} to {{relieving_date}}.</P>
+
+<P>During the internship period, <strong>{{name}}</strong> consistently demonstrated a strong work ethic, eagerness to learn, and the ability to apply theoretical knowledge to practical tasks. They were actively involved in software development and completed all assigned tasks with professionalism and dedication.
+</P>
+<P>One of their key strengths is problem-solving, communication skills, teamwork, technical skills . <strong>{{name}}</strong> worked well both independently and as part of a team, showed a positive attitude toward feedback, and was always willing to take on new challenges.
+</P>
+<P>Based on their performance, I am confident that <strong>{{ name }}</strong> will be a valuable asset to any organization or academic program they chooses to pursue. I strongly recommend them without any reservation.
+</P>
+    {% endif %}
+
+{% endif %}
+
+</div>
+
 
         <br>
 
@@ -158,7 +217,7 @@
     </form>
 </div>
 
-<script>
+<!--<script>
 function setFinalContent() {
     document.getElementById("finalContent").value =
         document.getElementById("letterBody").innerText;
@@ -180,6 +239,31 @@ document.getElementById("draftForm").addEventListener("submit", function(e) {
         }
     });
 });
+</script>-->
+<script>
+function setFinalContent() {
+    document.getElementById("finalContent").value =
+        document.getElementById("letterBody").innerHTML;
+}
+
+document.getElementById("draftForm").addEventListener("submit", function(e) {
+    e.preventDefault();
+
+    document.getElementById("draftContent").value =
+        document.getElementById("letterBody").innerHTML;
+
+    fetch("{{ url_for('save_draft') }}", {
+        method: "POST",
+        body: new FormData(this)
+    })
+    .then(res => res.json())
+    .then(data => {
+        if (data.status === "success") {
+            alert("Draft saved successfully");
+        }
+    });
+});
 </script>
+
 
 {% endblock %}

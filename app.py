@@ -13,6 +13,7 @@ import secrets
 from bs4 import BeautifulSoup, NavigableString
 import os
 from flask import current_app
+from dateutil.relativedelta import relativedelta
 
 '''from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Table, TableStyle
 from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
@@ -323,7 +324,9 @@ def offer_letter(emp_id):
 
     if not emp:
         return "Employee not found"
-
+    joining_date_obj = datetime.strptime(emp["joining_date"], "%Y-%m-%d")
+    relieving_date_obj = joining_date_obj + relativedelta(months=3)
+    relieving_date = relieving_date_obj.strftime("%d %B %Y")
     # 👉 Just open editable preview (NO PDF here)
     return render_template(
         "letters/offer_letter_preview.html",
@@ -332,6 +335,7 @@ def offer_letter(emp_id):
         designation=emp["designation"],
         stipend="unpaid internship",
         joining_date=emp["joining_date"],
+        relieving_date=relieving_date,
         today=datetime.now().strftime("%d %B %Y")
     )
 #-------------------- OFFER LETTER DOCUMENT (PRINTABLE) --------------------
@@ -450,7 +454,7 @@ def generate_letter():
         conn = get_db_connection()
         employees = conn.execute("SELECT * FROM employees").fetchall()
         conn.close()
-
+    
         return render_template(
             "dashboard/generate_letter.html",
             employees=employees
@@ -475,6 +479,10 @@ def generate_letter():
 
     if not emp:
         return "Employee not found"
+        # 🔥 AUTO RELIEVING DATE CALCULATION
+    joining_date_obj = datetime.strptime(emp["joining_date"], "%Y-%m-%d")
+    relieving_date_obj = joining_date_obj + relativedelta(months=3)
+    relieving_date = relieving_date_obj.strftime("%d %B %Y")
 
     today = date.today().strftime("%d %B %Y")
 
@@ -486,6 +494,7 @@ def generate_letter():
             name=emp["name"],
             designation=emp["designation"],
             joining_date=emp["joining_date"],
+            relieving_date=relieving_date,
             today=today
         )
 
@@ -497,7 +506,7 @@ def generate_letter():
             name=emp["name"],
             designation=emp["designation"],
             joining_date=emp["joining_date"],
-            relieving_date="December 27, 2025",  # temp
+            relieving_date=relieving_date,  # temp
             title="RELIEVING LETTER",
             letter_type="Relieving Letter",
             body="",  # NOT USED
@@ -517,7 +526,7 @@ def generate_letter():
         )
 
     # ---------------- TERMINATION LETTER ----------------
-    if letter_type == "termination":
+    '''if letter_type == "termination":
         return render_template(
             "letters/generic_letter_preview.html",
             emp_id=emp["id"],
@@ -527,9 +536,21 @@ def generate_letter():
             body=f"Your employment as {emp['designation']} is terminated effective immediately.",
             today=today
         )
+'''
+    if letter_type == "termination":
+        return render_template(
+            "letters/generic_letter_preview.html",
+            title="TERMINATION LETTER",
+            letter_type="Termination Letter",
+            emp_id=emp["id"],
+            name=emp["name"],
+            joining_date=emp["joining_date"],
+            relieving_date=relieving_date,
+            today=date.today().strftime("%d %B %Y")
+        )
 
     # ---------------- APPRECIATION LETTER ----------------
-    if letter_type == "appreciation":
+    '''if letter_type == "appreciation":
         return render_template(
             "letters/generic_letter_preview.html",
             emp_id=emp["id"],
@@ -538,6 +559,19 @@ def generate_letter():
             letter_type="Certificate of Appreciation",
             body=f"This certificate is awarded for outstanding performance as {emp['designation']}.",
             today=today
+        )
+'''
+    if letter_type == "appreciation":
+        return render_template(
+            "letters/generic_letter_preview.html",
+            emp_id=emp["id"],
+            name=emp["name"],
+            designation=emp["designation"],
+            title="CERTIFICATE OF APPRECIATION",
+            letter_type="Appreciation Letter",
+            joining_date=emp["joining_date"],
+            relieving_date=relieving_date,
+            today=date.today().strftime("%d %B %Y")
         )
 
     return "Invalid letter type"
@@ -992,7 +1026,7 @@ def finalize_offer_letter():
         <a href="/{pdf_path}" target="_blank">⬇ Download Offer Letter</a>
     """
 '''
-@app.route("/finalize-offer-letter", methods=["POST"])
+'''@app.route("/finalize-offer-letter", methods=["POST"])
 @login_required
 def finalize_offer_letter():
     emp_id = request.form["emp_id"]
@@ -1031,6 +1065,41 @@ def finalize_offer_letter():
         <h3>Offer Letter Generated Successfully ✅</h3>
         <a href="/{pdf_path}" target="_blank">⬇ Download Offer Letter</a>
     """
+    '''
+@app.route("/finalize-offer-letter", methods=["POST"])
+@login_required
+def finalize_offer_letter():
+    emp_id = request.form["emp_id"]
+    html_content = request.form.get("content")  # FULL paperContent
+
+    if not html_content:
+        return "No content received from editor"
+
+    pdf_html = render_template(
+        "letters/pdf_wrapper.html",
+        content=html_content
+    )
+
+    pdf_path = build_letter_pdf(pdf_html, f"offer_letter_{emp_id}")
+
+    conn = get_db_connection()
+    conn.execute("""
+        INSERT INTO letters (employee_id, letter_type, file_path, status, created_at)
+        VALUES (?, ?, ?, 'FINAL', ?)
+    """, (
+        emp_id,
+        "Offer Letter",
+        pdf_path,
+        datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    ))
+    conn.commit()
+    conn.close()
+
+    return f"""
+        <h3>Offer Letter Generated Successfully ✅</h3>
+        <a href="/{pdf_path}" target="_blank">⬇ Download Offer Letter</a>
+    """
+
 
 
 # -------------------- FINALIZE GENERIC LETTER --------------------
@@ -1327,6 +1396,10 @@ def finalize_generic_letter():
         return "Employee not found"
 
     today = datetime.now().strftime("%d %B %Y")
+        # 🔥 AUTO RELIEVING DATE CALCULATION
+    joining_date_obj = datetime.strptime(emp["joining_date"], "%Y-%m-%d")
+    relieving_date_obj = joining_date_obj + relativedelta(months=3)
+    relieving_date = relieving_date_obj.strftime("%d %B %Y")
 
     # 🔑 ALWAYS render the SAME template
     html = render_template(
@@ -1334,10 +1407,11 @@ def finalize_generic_letter():
         name=emp["name"],
         designation=emp["designation"],
         joining_date=emp["joining_date"],
-        relieving_date="December 27, 2025",  # temporary
+        relieving_date=relieving_date, # temporary
         title=letter_type,
         letter_type=letter_type,   # ⭐ VERY IMPORTANT
-        body=body,
+        #body=None,
+        draft_content=body,
         today=today
     )
 
@@ -2546,6 +2620,23 @@ def clear_drafts():
     conn.close()
     return "Drafts cleared"
 '''
+# -------------------- DELETE DRAFT --------------------
+@app.route("/delete-draft/<int:draft_id>", methods=["POST"])
+@login_required
+def delete_draft(draft_id):
+    conn = get_db_connection()
+
+    # Safety: ONLY drafts delete avvali
+    conn.execute("""
+        DELETE FROM letters
+        WHERE id = ? AND status = 'DRAFT'
+    """, (draft_id,))
+
+    conn.commit()
+    conn.close()
+
+    return jsonify({"status": "success"})
+
 # -------------------- RUN APP --------------------
 if __name__ == "__main__":
     app.run(debug=True)

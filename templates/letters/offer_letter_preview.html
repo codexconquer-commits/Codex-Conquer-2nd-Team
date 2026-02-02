@@ -180,7 +180,9 @@
 
 <div class="page">
 <div class="paper" id="paperContent" contenteditable="true">
-
+{% if draft_content %}
+    {{ draft_content | safe }}
+{% else %}
     <!-- HEADER -->
     <div class="banner">
         <h1>INTERNSHIP OFFER LETTER</h1>
@@ -209,7 +211,7 @@
             Digital Marketing, and other services.
             You are requested to accept the Internship with us
             for a tenure of three months starting from
-            <strong>{{ joining_date }}</strong>.
+            <strong>{{ joining_date }}</strong> to <strong>{{ relieving_date }}</strong>.
         </p>
 
         <p>
@@ -322,7 +324,7 @@
             CodeXConquer
         </p>
     </div>
-
+{% endif %}
 </div>
 </div>
 
@@ -376,7 +378,7 @@ document.getElementById("draftForm").addEventListener("submit", function(e) {
     });
 });
 </script>-->
-<script>
+<!--<script>
 /* CONFIRM & GENERATE → FULL PAPER */
 function setFinalContent() {
     document.getElementById("finalContent").value =
@@ -403,7 +405,34 @@ document.getElementById("draftForm").addEventListener("submit", function(e) {
         }
     });
 });
+</script>-->
+<script>
+/* FINAL PDF */
+function setFinalContent() {
+    document.getElementById("finalContent").value =
+        document.getElementById("paperContent").innerHTML;
+}
+
+/* SAVE DRAFT – OFFER LETTER */
+document.getElementById("draftForm").addEventListener("submit", function(e) {
+    e.preventDefault();
+
+    document.getElementById("draftContent").value =
+        document.getElementById("paperContent").outerHTML; // 🔥 FIX
+
+    fetch("{{ url_for('save_draft') }}", {
+        method: "POST",
+        body: new FormData(this)
+    })
+    .then(res => res.json())
+    .then(data => {
+        if (data.status === "success") {
+            alert("Draft saved successfully");
+        }
+    });
+});
 </script>
+
 
 
 {% endblock %}

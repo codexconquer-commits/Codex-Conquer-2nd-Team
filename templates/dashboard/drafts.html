@@ -230,11 +230,38 @@ function showType(type) {
                 {% endif %}
             </div>
 
-            <div class="resume">
-                <a href="{{ url_for('edit_draft', draft_id=d.id) }}">
-                    Resume
-                </a>
-            </div>
+            <div class="resume" style="display:flex; gap:8px; align-items:center;">
+    <a href="{{ url_for('edit_draft', draft_id=d.id) }}"
+       style="
+            text-decoration:none;
+            background:#2563eb;
+            color:white;
+            padding:8px 14px;
+            border-radius:6px;
+            font-size:14px;
+       ">
+        Resume
+    </a>
+
+    <button
+    type="button"
+    class="delete-btn"
+    data-draft-id="{{ d.id }}"
+    style="
+        background:#ef4444;
+        color:white;
+        border:none;
+        padding:8px 12px;
+        border-radius:6px;
+        cursor:pointer;
+        font-size:14px;
+    ">
+    Delete
+</button>
+
+</div>
+
+
         </div>
         {% endfor %}
 
@@ -257,5 +284,58 @@ function showType(type) {
     document.querySelectorAll(".type-card").forEach(c => c.classList.remove("active"));
     event.currentTarget.classList.add("active");
 }
+
+function deleteDraft(draftId) {
+    if (!confirm("Are you sure you want to delete this draft?")) {
+        return;
+    }
+
+    fetch(`/delete-draft/${draftId}`, {
+        method: "POST"
+    })
+    .then(res => res.json())
+    .then(data => {
+        if (data.status === "success") {
+            alert("Draft deleted successfully");
+            location.reload();
+        }
+    });
+}
+
+function showType(type) {
+    document.querySelectorAll(".draft-group").forEach(el => el.style.display = "none");
+    document.getElementById("group-" + type).style.display = "block";
+
+    document.querySelectorAll(".type-card").forEach(c => c.classList.remove("active"));
+    event.currentTarget.classList.add("active");
+}
+
+/* ✅ DELETE DRAFT HANDLER */
+document.addEventListener("DOMContentLoaded", function () {
+
+    document.querySelectorAll(".delete-btn").forEach(btn => {
+        btn.addEventListener("click", function () {
+            const draftId = this.dataset.draftId;
+
+            if (!confirm("Are you sure you want to delete this draft?")) return;
+
+            fetch(`/delete-draft/${draftId}`, {
+                method: "POST"
+            })
+            .then(res => res.json())
+            .then(data => {
+                if (data.status === "success") {
+                    location.reload();
+                } else {
+                    alert("Failed to delete draft");
+                }
+            });
+        });
+    });
+
+});
+
+
+
 </script>
 {% endblock %}

@@ -35,23 +35,27 @@ export default function useAudioCall(me) {
   /* ================= REMOTE AUDIO ================= */
 
   const attachRemoteAudio = (stream) => {
-    if (!remoteAudioRef.current) {
-      const audio = document.createElement("audio");
-      audio.autoplay = true;
-      audio.playsInline = true;
-      audio.muted = false;
-      document.body.appendChild(audio);
-      remoteAudioRef.current = audio;
-    }
+  if (!remoteAudioRef.current) {
+    const audio = document.createElement("audio");
+    audio.autoplay = true;
+    audio.playsInline = true;
+    audio.muted = false;
+    audio.volume = 1;            // 🔥 FORCE FULL VOLUME
+    audio.setAttribute("controls", ""); // 🔥 DEBUG / MOBILE WAKE
+    document.body.appendChild(audio);
+    remoteAudioRef.current = audio;
+  }
 
-    remoteAudioRef.current.srcObject = stream;
+  remoteAudioRef.current.srcObject = stream;
 
+  // 🔥 HARD PLAY (mobile safe)
+  setTimeout(() => {
     remoteAudioRef.current
-      .play()
-      .catch(() =>
-        console.warn("🔇 Mobile autoplay blocked until user interaction")
-      );
-  };
+      ?.play()
+      .then(() => console.log("🔊 Remote audio playing"))
+      .catch((e) => console.warn("🔇 Play blocked:", e));
+  }, 0);
+};
 
   /* ================= FLUSH ICE ================= */
 

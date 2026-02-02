@@ -220,14 +220,23 @@ export default function useAudioCall(me) {
     });
 
     socket.on("call-accepted", async ({ answer }) => {
-      if (!isCallerRef.current) return;
-      if (!pcRef.current) return;
+  if (!isCallerRef.current) return;
+  if (!pcRef.current) return;
 
-      await pcRef.current.setRemoteDescription(answer);
-      await flushPendingCandidates();
+  // 🔒 IMPORTANT GUARD
+  if (pcRef.current.signalingState !== "have-local-offer") {
+    console.warn(
+      "⚠️ Ignoring duplicate answer. State =",
+      pcRef.current.signalingState
+    );
+    return;
+  }
 
-      setIsCallConnected(true);
-    });
+  await pcRef.current.setRemoteDescription(answer);
+  await flushPendingCandidates();
+
+  setIsCallConnected(true);
+});
 
     socket.on("ice-candidate", ({ candidate }) => {
       if (!candidate) return;

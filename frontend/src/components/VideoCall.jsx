@@ -25,7 +25,6 @@ const VideoCall = ({
 }) => {
   const localVideoRef = useRef(null);
   const remoteVideoRef = useRef(null);
-  const registeredRef = useRef(false);
 
   /* 🔹 Attach local stream */
   useEffect(() => {
@@ -40,13 +39,12 @@ const VideoCall = ({
     };
   }, [localStream]);
 
-  /* 🔹 Register remote video ONCE */
+  /* 🔥 ALWAYS register remote video when call opens */
   useEffect(() => {
-    if (!registeredRef.current && remoteVideoRef.current) {
+    if (open && remoteVideoRef.current) {
       registerRemoteElement(remoteVideoRef.current);
-      registeredRef.current = true;
     }
-  }, [registerRemoteElement]);
+  }, [open, registerRemoteElement]);
 
   if (!open) return null;
 
@@ -64,7 +62,7 @@ const VideoCall = ({
 
       {/* ================= VIDEO AREA ================= */}
       <div className="flex-1 relative bg-black">
-        {/* 🔥 Remote Video (full screen, no zoom issue) */}
+        {/* 🔥 Remote Video */}
         <video
           ref={remoteVideoRef}
           autoPlay
@@ -72,7 +70,7 @@ const VideoCall = ({
           className="absolute inset-0 w-full h-full object-cover bg-black"
         />
 
-        {/* 🔥 Local Preview (natural size + mirror) */}
+        {/* 🔥 Local Preview */}
         {localStream && (
           <div className="absolute bottom-24 right-4 z-30
                           w-28 sm:w-36 aspect-video
@@ -124,8 +122,7 @@ const VideoCall = ({
             <button
               onClick={onAccept}
               className="w-16 h-16 rounded-full bg-green-600
-                         flex items-center justify-center
-                         hover:bg-green-700 transition"
+                         flex items-center justify-center"
             >
               <PhoneIncoming size={28} />
             </button>
@@ -133,8 +130,7 @@ const VideoCall = ({
             <button
               onClick={onReject}
               className="w-16 h-16 rounded-full bg-red-600
-                         flex items-center justify-center
-                         hover:bg-red-700 transition"
+                         flex items-center justify-center"
             >
               <PhoneOff size={28} />
             </button>
@@ -143,8 +139,7 @@ const VideoCall = ({
           <button
             onClick={onEnd}
             className="w-16 h-16 rounded-full bg-red-600
-                       flex items-center justify-center
-                       hover:bg-red-700 transition"
+                       flex items-center justify-center"
           >
             <PhoneOff size={28} />
           </button>

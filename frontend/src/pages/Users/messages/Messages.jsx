@@ -14,7 +14,7 @@ import useMessagesSocket from "./useMessagesSocket";
 const Messages = () => {
   const { isDark } = useContext(AppContext);
 
-  console.log("📨 Messages render");
+  
 
   const [users, setUsers] = useState([]);
   const [activeChat, setActiveChat] = useState(null);

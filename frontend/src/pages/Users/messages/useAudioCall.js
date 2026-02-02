@@ -1,14 +1,29 @@
 import { useEffect, useRef, useState } from "react";
 import socket from "../../../socket/socket";
 
+/* ================= RTC CONFIG ================= */
+
 const RTC_CONFIG = {
-  iceServers: [{ urls: "stun:stun.l.google.com:19302" }],
+  iceServers: [
+    { urls: "stun:stun.l.google.com:19302" },
+    {
+      urls: "turn:openrelay.metered.ca:80",
+      username: "openrelayproject",
+      credential: "openrelayproject",
+    },
+    {
+      urls: "turn:openrelay.metered.ca:443",
+      username: "openrelayproject",
+      credential: "openrelayproject",
+    },
+  ],
 };
 
-export default function useAudio(me) {
+export default function useAudioCall(me) {
   const pcRef = useRef(null);
   const localStreamRef = useRef(null);
   const remoteAudioRef = useRef(null);
+  const pendingCandidatesRef = useRef([]);
   const isCallerRef = useRef(false);
 
   const [isCallOpen, setIsCallOpen] = useState(false);
@@ -34,8 +49,23 @@ export default function useAudio(me) {
     remoteAudioRef.current
       .play()
       .catch(() =>
-        console.warn("🔇 Autoplay blocked (needs user interaction)")
+        console.warn("🔇 Mobile autoplay blocked until user interaction")
       );
+  };
+
+  /* ================= FLUSH ICE ================= */
+
+  const flushPendingCandidates = async () => {
+    if (!pcRef.current) return;
+
+    for (const candidate of pendingCandidatesRef.current) {
+      try {
+        await pcRef.current.addIceCandidate(candidate);
+      } catch (e) {
+        console.error("ICE add error", e);
+      }
+    }
+    pendingCandidatesRef.current = [];
   };
 
   /* ================= CLEANUP ================= */
@@ -52,6 +82,7 @@ export default function useAudio(me) {
 
     localStreamRef.current = null;
     pcRef.current = null;
+    pendingCandidatesRef.current = [];
     isCallerRef.current = false;
 
     setIsCallConnected(false);
@@ -63,8 +94,8 @@ export default function useAudio(me) {
   /* ================= START CALL (CALLER) ================= */
 
   const startAudioCall = async (otherUser) => {
-    setIsCallOpen(true);
     isCallerRef.current = true;
+    setIsCallOpen(true);
 
     const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
     localStreamRef.current = stream;
@@ -72,7 +103,10 @@ export default function useAudio(me) {
     const pc = new RTCPeerConnection(RTC_CONFIG);
     pcRef.current = pc;
 
-    pc.ontrack = (e) => attachRemoteAudio(e.streams[0]);
+    pc.ontrack = (e) => {
+      console.log("🎧 Remote tracks:", e.streams[0].getAudioTracks());
+      attachRemoteAudio(e.streams[0]);
+    };
 
     pc.onicecandidate = (e) => {
       if (e.candidate) {
@@ -89,7 +123,6 @@ export default function useAudio(me) {
     await pc.setLocalDescription(offer);
 
     setCaller(otherUser);
-    setIsCallOpen(true);
 
     socket.emit("call-user", {
       toUserId: otherUser._id,
@@ -112,7 +145,10 @@ export default function useAudio(me) {
     const pc = new RTCPeerConnection(RTC_CONFIG);
     pcRef.current = pc;
 
-    pc.ontrack = (e) => attachRemoteAudio(e.streams[0]);
+    pc.ontrack = (e) => {
+      console.log("🎧 Remote tracks:", e.streams[0].getAudioTracks());
+      attachRemoteAudio(e.streams[0]);
+    };
 
     pc.onicecandidate = (e) => {
       if (e.candidate) {
@@ -126,6 +162,7 @@ export default function useAudio(me) {
     stream.getTracks().forEach((t) => pc.addTrack(t, stream));
 
     await pc.setRemoteDescription(offer);
+    await flushPendingCandidates();
 
     const answer = await pc.createAnswer();
     await pc.setLocalDescription(answer);
@@ -140,7 +177,7 @@ export default function useAudio(me) {
     setIsCallOpen(true);
   };
 
-  /* ================= REJECT ================= */
+  /* ================= END / REJECT ================= */
 
   const rejectAudioCall = () => {
     if (!incomingCall) return;
@@ -152,8 +189,6 @@ export default function useAudio(me) {
     cleanup();
     setIsCallOpen(false);
   };
-
-  /* ================= END CALL ================= */
 
   const endAudioCall = () => {
     socket.emit("end-call", { toUserId: caller?._id });
@@ -181,18 +216,22 @@ export default function useAudio(me) {
     });
 
     socket.on("call-accepted", async ({ answer }) => {
-      // ✅ ONLY CALLER handles answer
       if (!isCallerRef.current) return;
-
-      if (pcRef.current?.signalingState !== "have-local-offer") return;
+      if (!pcRef.current) return;
 
       await pcRef.current.setRemoteDescription(answer);
+      await flushPendingCandidates();
+
       setIsCallConnected(true);
     });
 
     socket.on("ice-candidate", ({ candidate }) => {
-      if (candidate && pcRef.current?.remoteDescription) {
+      if (!candidate) return;
+
+      if (pcRef.current?.remoteDescription) {
         pcRef.current.addIceCandidate(candidate);
+      } else {
+        pendingCandidatesRef.current.push(candidate);
       }
     });
 

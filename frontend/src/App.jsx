@@ -11,6 +11,7 @@ import Messages from "./pages/Users/messages/Messages.jsx";
 import Calls from "./pages/Users/Calling.jsx";
 import Profile from "./pages/Users/Profile.jsx";
 import GroupsMessages from "./pages/Users/groupMessages/GroupsMessages.jsx";
+
 import GlobalCallHandler from "./components/GlobalCallHandler.jsx";
 import { CallTriggerProvider } from "./context/CallTriggerContext.jsx";
 
@@ -27,8 +28,9 @@ const App = () => {
       >
         <Router>
           <CallTriggerProvider>
-         
-            <GlobalCallHandler />
+
+            {/* 🔥 IMPORTANT FIX */}
+            {user && <GlobalCallHandler />}
 
             <Routes>
               <Route path="/" element={<Home />} />
@@ -40,6 +42,7 @@ const App = () => {
               <Route path="/calls" element={<Calls />} />
               <Route path="/profile" element={<Profile />} />
             </Routes>
+
           </CallTriggerProvider>
         </Router>
       </div>

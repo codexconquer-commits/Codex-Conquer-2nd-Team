@@ -7,12 +7,7 @@ const RTC_CONFIG = {
   iceServers: [
     { urls: "stun:stun.l.google.com:19302" },
     {
-      urls: "turn:openrelay.metered.ca:80",
-      username: "openrelayproject",
-      credential: "openrelayproject",
-    },
-    {
-      urls: "turn:openrelay.metered.ca:443",
+      urls: "turn:openrelay.metered.ca:443?transport=tcp",
       username: "openrelayproject",
       credential: "openrelayproject",
     },
@@ -35,29 +30,27 @@ export default function useAudioCall(me) {
   /* ================= REMOTE AUDIO ================= */
 
   const attachRemoteAudio = (stream) => {
-  if (!remoteAudioRef.current) {
-    const audio = document.createElement("audio");
-    audio.autoplay = true;
-    audio.playsInline = true;
-    audio.muted = false;
-    audio.volume = 1;            // 🔥 FORCE FULL VOLUME
-    audio.setAttribute("controls", ""); // 🔥 DEBUG / MOBILE WAKE
-    document.body.appendChild(audio);
-    remoteAudioRef.current = audio;
-  }
+    if (!remoteAudioRef.current) {
+      const audio = document.createElement("audio");
+      audio.autoplay = true;
+      audio.playsInline = true;
+      audio.muted = false;
+      audio.volume = 1;
+      document.body.appendChild(audio);
+      remoteAudioRef.current = audio;
+    }
 
-  remoteAudioRef.current.srcObject = stream;
+    remoteAudioRef.current.srcObject = stream;
 
-  // 🔥 HARD PLAY (mobile safe)
-  setTimeout(() => {
-    remoteAudioRef.current
-      ?.play()
-      .then(() => console.log("🔊 Remote audio playing"))
-      .catch((e) => console.warn("🔇 Play blocked:", e));
-  }, 0);
-};
+    setTimeout(() => {
+      remoteAudioRef.current
+        ?.play()
+        .then(() => console.log("🔊 Remote audio playing"))
+        .catch((e) => console.warn("🔇 Play blocked:", e));
+    }, 0);
+  };
 
-  /* ================= FLUSH ICE ================= */
+  /* ================= ICE FLUSH ================= */
 
   const flushPendingCandidates = async () => {
     if (!pcRef.current) return;
@@ -84,8 +77,8 @@ export default function useAudioCall(me) {
       remoteAudioRef.current = null;
     }
 
-    localStreamRef.current = null;
     pcRef.current = null;
+    localStreamRef.current = null;
     pendingCandidatesRef.current = [];
     isCallerRef.current = false;
 
@@ -98,6 +91,11 @@ export default function useAudioCall(me) {
   /* ================= START CALL (CALLER) ================= */
 
   const startAudioCall = async (otherUser) => {
+    if (!me?._id) {
+      console.warn("User not ready, aborting call");
+      return;
+    }
+
     isCallerRef.current = true;
     setIsCallOpen(true);
 
@@ -107,10 +105,7 @@ export default function useAudioCall(me) {
     const pc = new RTCPeerConnection(RTC_CONFIG);
     pcRef.current = pc;
 
-    pc.ontrack = (e) => {
-      console.log("🎧 Remote tracks:", e.streams[0].getAudioTracks());
-      attachRemoteAudio(e.streams[0]);
-    };
+    pc.ontrack = (e) => attachRemoteAudio(e.streams[0]);
 
     pc.onicecandidate = (e) => {
       if (e.candidate) {
@@ -139,7 +134,9 @@ export default function useAudioCall(me) {
 
   const acceptAudioCall = async () => {
     if (!incomingCall) return;
+
     isCallerRef.current = false;
+    setIsCallOpen(true);
 
     const { offer, fromUser } = incomingCall;
 
@@ -149,10 +146,7 @@ export default function useAudioCall(me) {
     const pc = new RTCPeerConnection(RTC_CONFIG);
     pcRef.current = pc;
 
-    pc.ontrack = (e) => {
-      console.log("🎧 Remote tracks:", e.streams[0].getAudioTracks());
-      attachRemoteAudio(e.streams[0]);
-    };
+    pc.ontrack = (e) => attachRemoteAudio(e.streams[0]);
 
     pc.onicecandidate = (e) => {
       if (e.candidate) {
@@ -178,7 +172,6 @@ export default function useAudioCall(me) {
 
     setIsCallConnected(true);
     setIncomingCall(null);
-    setIsCallOpen(true);
   };
 
   /* ================= END / REJECT ================= */
@@ -213,32 +206,24 @@ export default function useAudioCall(me) {
   /* ================= SOCKET LISTENERS ================= */
 
   useEffect(() => {
-    socket.on("incoming-call", (data) => {
+    const onIncoming = (data) => {
       setIncomingCall(data);
       setCaller(data.fromUser);
       setIsCallOpen(true);
-    });
+    };
 
-    socket.on("call-accepted", async ({ answer }) => {
-  if (!isCallerRef.current) return;
-  if (!pcRef.current) return;
+    const onAccepted = async ({ answer }) => {
+      if (!isCallerRef.current) return;
+      if (!pcRef.current) return;
 
-  // 🔒 IMPORTANT GUARD
-  if (pcRef.current.signalingState !== "have-local-offer") {
-    console.warn(
-      "⚠️ Ignoring duplicate answer. State =",
-      pcRef.current.signalingState
-    );
-    return;
-  }
+      if (pcRef.current.signalingState !== "have-local-offer") return;
 
-  await pcRef.current.setRemoteDescription(answer);
-  await flushPendingCandidates();
+      await pcRef.current.setRemoteDescription(answer);
+      await flushPendingCandidates();
+      setIsCallConnected(true);
+    };
 
-  setIsCallConnected(true);
-});
-
-    socket.on("ice-candidate", ({ candidate }) => {
+    const onIce = ({ candidate }) => {
       if (!candidate) return;
 
       if (pcRef.current?.remoteDescription) {
@@ -246,14 +231,24 @@ export default function useAudioCall(me) {
       } else {
         pendingCandidatesRef.current.push(candidate);
       }
-    });
+    };
 
-    socket.on("call-ended", () => {
+    const onEnded = () => {
       cleanup();
       setIsCallOpen(false);
-    });
+    };
 
-    return () => socket.offAny();
+    socket.on("incoming-call", onIncoming);
+    socket.on("call-accepted", onAccepted);
+    socket.on("ice-candidate", onIce);
+    socket.on("call-ended", onEnded);
+
+    return () => {
+      socket.off("incoming-call", onIncoming);
+      socket.off("call-accepted", onAccepted);
+      socket.off("ice-candidate", onIce);
+      socket.off("call-ended", onEnded);
+    };
   }, []);
 
   return {

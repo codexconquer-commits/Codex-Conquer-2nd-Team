@@ -282,5 +282,6 @@ export default function useVideoCall(me) {
     toggleMute,
     toggleCamera,
     registerRemoteElement,
+    localStreamRef
   };
 }

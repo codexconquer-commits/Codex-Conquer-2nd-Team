@@ -5,28 +5,22 @@ import { AppContext } from "../../../context/Theme-Context";
 import socket from "../../../socket/socket.js";
 
 import api from "../../../api/axios";
-import AudioCall from "./AudioCall.jsx";
 import ChatHeader from "./ChatHeader";
 import ChatInput from "./ChatInput";
 import ChatMessages from "./ChatMessages";
 import ChatSidebar from "./ChatSidebar";
-import useAudio from "./useAudioCall.js";
 import useMessagesSocket from "./useMessagesSocket";
-import useVideoCall from "./useVideoCall.js";
-import VideoCall from "./VideoCall.jsx";
-
-const BASE = import.meta.env.VITE_BASE_URL;
 
 const Messages = () => {
-  const { isDark, user } = useContext(AppContext);
+  const { isDark } = useContext(AppContext);
+
+  console.log("📨 Messages render");
+
   const [users, setUsers] = useState([]);
   const [activeChat, setActiveChat] = useState(null);
   const [messages, setMessages] = useState([]);
   const [text, setText] = useState("");
   const [me, setMe] = useState(null);
-  const audio = useAudio(me);
-  const video = useVideoCall(me);
-  const [localVideoStream, setLocalVideoStream] = useState(null);
 
   const [onlineUsers, setOnlineUsers] = useState([]);
   const [typingUser, setTypingUser] = useState("");
@@ -36,26 +30,31 @@ const Messages = () => {
 
   const messagesEndRef = useRef(null);
 
-  /* ================= LOAD USER & USERS ================= */
+  /* ================= LOAD LOGGED-IN USER ================= */
+const { setUser } = useContext(AppContext);
 
+useEffect(() => {
+  api.get("/api/users/me")
+    .then((res) => {
+      setMe(res.data);
+      setUser(res.data); // 🔥 THIS IS REQUIRED
+      socket.emit("add-user", res.data._id);
+    })
+    .catch(console.error);
+}, []);
+
+  /* ================= LOAD USERS ================= */
   useEffect(() => {
-    api
-      .get("/api/users/me")
+    console.log("👥 Fetching users...");
+    api.get("/api/users")
       .then((res) => {
-        setMe(res.data);
-        socket.emit("add-user", res.data._id);
+        console.log("✅ Users loaded:", res.data);
+        setUsers(res.data || []);
       })
       .catch(console.error);
   }, []);
 
-  useEffect(() => {
-    api.get("/api/users").then((res) => {
-      setUsers(res.data || []);
-    });
-  }, []);
-
-  /* ================= SOCKET MESSAGE LISTENER ================= */
-
+  /* ================= SOCKET MESSAGE LISTENERS ================= */
   useMessagesSocket({
     activeChat,
     setMessages,
@@ -63,12 +62,12 @@ const Messages = () => {
     setOnlineUsers,
   });
 
-  /* ================= HELPERS ================= */
-
+  /* ================= AUTO SCROLL ================= */
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
 
+  /* ================= RESPONSIVE ================= */
   useEffect(() => {
     const resize = () => setIsMobile(window.innerWidth <= 768);
     window.addEventListener("resize", resize);
@@ -76,16 +75,14 @@ const Messages = () => {
   }, []);
 
   /* ================= OPEN CHAT ================= */
-
   const openChatWithUser = async (userId) => {
-    const res = await api.post(
-      `/api/chats`,
-      { userId },
-      { withCredentials: true }
-    );
+    console.log("📂 Opening chat with:", userId);
 
+    const res = await api.post("/api/chats", { userId });
     setActiveChat(res.data);
+
     socket.emit("join-chat", res.data._id);
+    console.log("📡 socket.emit → join-chat", res.data._id);
 
     const msgs = await api.get(`/api/messages/${res.data._id}`);
     setMessages(msgs.data || []);
@@ -94,11 +91,10 @@ const Messages = () => {
   };
 
   /* ================= SEND MESSAGE ================= */
-
   const sendMessage = async () => {
     if (!text.trim() || !activeChat) return;
 
-    const res = await api.post(`/api/messages`, {
+    const res = await api.post("/api/messages", {
       chatId: activeChat._id,
       text,
     });
@@ -112,47 +108,10 @@ const Messages = () => {
     });
   };
 
-  /* ================= AUDIO / VIDEO CALL TRIGGERS ================= */
-
-  const startAudioCall = async () => {
-    if (!activeChat || !me) return;
-
-    const otherUser = activeChat.members.find((m) => m._id !== me._id);
-    if (!otherUser) return;
-
-    audio.startAudioCall(otherUser);
-  };
-
-  const endAudioCall = () => {
-    audio.endAudioCall();
-  };
-
-  const startVideoCallHandler = async () => {
-    if (!activeChat || !me) return;
-
-    const otherUser = activeChat.members.find((m) => m._id !== me._id);
-    if (!otherUser) return;
-
-    // startVideoCall now takes NO DOM refs; it returns the local stream
-    const localStream = await video.startVideoCall(otherUser);
-    if (localStream) setLocalVideoStream(localStream);
-  };
-
-  const acceptVideoCallHandler = async () => {
-    const localStream = await video.acceptVideoCall();
-    if (localStream) setLocalVideoStream(localStream);
-  };
-
-  const endVideoCallHandler = () => {
-    video.endVideoCall();
-    setLocalVideoStream(null);
-  };
-
   /* ================= RENDER ================= */
-
   return (
     <div
-      className={`flex h-screen font-regular overflow-hidden ml-18  ${
+      className={`flex h-screen overflow-hidden ml-18 font-regular ${
         isDark ? "bg-darkmode text-white" : "bg-lightmode text-black"
       }`}
     >
@@ -164,47 +123,28 @@ const Messages = () => {
         onUserClick={openChatWithUser}
         isMobile={isMobile}
         setShowChatMobile={setShowChatMobile}
-        isDark={isDark}
         showChatMobile={showChatMobile}
         activeChat={activeChat}
+        isDark={isDark}
       />
 
       <main
         className={
           isMobile && showChatMobile
-            ? "fixed top-0 left-0 w-screen h-screen z-40 bg-inherit flex flex-col"
-            : "relative flex-1 flex flex-col h-full"
+            ? "fixed inset-0 z-40 flex flex-col bg-inherit"
+            : "relative flex-1 flex flex-col"
         }
       >
         {!activeChat ? (
           <div className="flex-1 flex flex-col items-center justify-center text-center px-4">
-            <div className="w-28 h-28 mb-6 rounded-3xl bg-gradient-to-tr from-blue-500 via-purple-500 to-pink-500 flex items-center justify-center shadow-xl">
-              <img
-                src={Logo}
-                alt="App Logo"
-                className="w-16 h-16 rounded-full"
-              />
-            </div>
-
-            <h1 className="text-3xl font-extrabold tracking-tight">
+            <img src={Logo} alt="App Logo" className="w-16 h-16 rounded-full" />
+            <h1 className="text-3xl font-extrabold mt-4">
               Convo for Desktop
             </h1>
-
-            <p className="opacity-70 max-w-md mt-3 text-sm sm:text-base">
-              Send and receive messages without relying on your phone
-              connection.
-            </p>
-
-            <div className="flex items-center gap-2 mt-10 text-xs opacity-60">
-              <span className="text-lg">🔒</span>
-              <span>Your personal messages are end-to-end encrypted</span>
-            </div>
           </div>
         ) : (
           <>
             <ChatHeader
-              onCall={startAudioCall}
-              onVideoCall={startVideoCallHandler}
               activeChat={activeChat}
               me={me}
               onlineUsers={onlineUsers}
@@ -213,44 +153,17 @@ const Messages = () => {
                 setShowChatMobile(false);
                 setActiveChat(null);
               }}
-            />
-
-            {/* 🔥 Audio Call Popup */}
-            <AudioCall
-              open={audio.isCallOpen}
-              isConnected={audio.isCallConnected}
-              callerName={audio.caller?.fullName || "User"}
-              callerAvatar={audio.caller?.fullName?.[0] || "U"}
-              isCalling={!audio.isCallConnected && !!audio.caller}
-              isIncoming={!!audio.incomingCall}
-              isMuted={audio.isMuted}
-              onAccept={audio.acceptAudioCall}
-              onReject={audio.rejectAudioCall}
-              onClose={audio.endAudioCall}
-              onMuteToggle={audio.toggleMute}
-            />
-
-            {/* Video Call - VideoCall owns video elements and registers them via registerRemoteElement */}
-            <VideoCall
-              open={video.isCallOpen}
-              isConnected={video.isCallConnected}
-              callerName={video.caller?.fullName || "User"}
-              isIncoming={!!video.incomingCall}
-              isMuted={video.isMuted}
-              isCameraOff={video.isCameraOff}
-              localStream={localVideoStream}
-              registerRemoteElement={video.registerRemoteElement}
-              onAccept={acceptVideoCallHandler}
-              onReject={video.rejectVideoCall}
-              onEnd={endVideoCallHandler}
-              onMuteToggle={video.toggleMute}
-              onCameraToggle={video.toggleCamera}
+              onCall={() =>
+                console.log("🔊 Audio call clicked (handled globally)")
+              }
+              onVideoCall={() =>
+                console.log("🎥 Video call clicked (handled globally)")
+              }
             />
 
             <ChatMessages
               messages={messages}
               me={me}
-              user={user}
               typingUser={typingUser}
               messagesEndRef={messagesEndRef}
             />

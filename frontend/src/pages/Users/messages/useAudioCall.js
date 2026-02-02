@@ -63,6 +63,7 @@ export default function useAudio(me) {
   /* ================= START CALL (CALLER) ================= */
 
   const startAudioCall = async (otherUser) => {
+    setIsCallOpen(true);
     isCallerRef.current = true;
 
     const stream = await navigator.mediaDevices.getUserMedia({ audio: true });

@@ -4,3 +4,4 @@ reportlab
 python-dateutil
 beautifulsoup4
 Werkzeug
+pdfkit

@@ -1075,6 +1075,20 @@ def finalize_offer_letter():
     if not html_content:
         return "No content received from editor"
 
+    logo_path = os.path.join(
+    current_app.root_path,
+    "static",
+    "images",
+    "logo.png"
+)
+
+    logo_path = f"file:///{logo_path.replace(os.sep, '/')}"
+
+    html_content = html_content.replace(
+    '/static/images/logo.png',
+    logo_path
+)
+
     pdf_html = render_template(
         "letters/pdf_wrapper.html",
         content=html_content
@@ -1394,6 +1408,17 @@ def finalize_generic_letter():
 
     if not emp:
         return "Employee not found"
+    import os
+    from flask import current_app
+
+    logo_path = os.path.join(
+        current_app.root_path,
+        "static",
+        "images",
+        "logo.png"
+    )
+
+    logo_path = f"file:///{logo_path.replace(os.sep, '/')}"
 
     today = datetime.now().strftime("%d %B %Y")
         # 🔥 AUTO RELIEVING DATE CALCULATION
@@ -1412,7 +1437,8 @@ def finalize_generic_letter():
         letter_type=letter_type,   # ⭐ VERY IMPORTANT
         #body=None,
         draft_content=body,
-        today=today
+        today=today,
+        logo_path=logo_path
     )
 
     filename = f"{letter_type.replace(' ', '_').lower()}_{emp_id}"

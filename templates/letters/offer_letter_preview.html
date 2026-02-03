@@ -47,13 +47,13 @@
     }
 
     .page-break {
-        page-break-before: always;
+        page-break-before: auto;
     }
 }
 
 @page {
     size: A4;
-    margin: 20mm;
+    margin: 12mm;
 }
 
 .paper {
@@ -104,7 +104,7 @@
 
 /* CONTENT */
 .content {
-    padding: 50px 60px;
+    padding: 30px 40px;
 }
 
 .date {
@@ -168,7 +168,7 @@
 }
 /* PDF PAGE BREAKS */
 .page-break {
-    page-break-before: always;
+    page-break-before: auto;
 }
 
 .avoid-break {
@@ -184,6 +184,31 @@
     {{ draft_content | safe }}
 {% else %}
     <!-- HEADER -->
+     <div style="display:flex; align-items:center; gap:15px; margin-bottom:20px;">
+
+    <img
+  src="{% if logo_path %}{{ logo_path }}{% else %}{{ url_for('static', filename='images/logo.png') }}{% endif %}"
+  style="height:60px;"
+>
+
+
+
+    <div>
+        <div style="font-size:26px; font-weight:bold; color:#1f4fd8;">
+            CODEXCONQUER
+        </div>
+        <div style="font-size:14px;">
+            www.codexconquer.com
+        </div>
+    </div>
+
+</div>
+
+<hr style="border:1px solid #2563eb; margin:15px 0 30px;">
+
+<!-- 👇 ADD THIS WRAPPER -->
+<div style="clear:both;"></div>
+
     <div class="banner">
         <h1>INTERNSHIP OFFER LETTER</h1>
         <h3>{{ designation | upper }}</h3>

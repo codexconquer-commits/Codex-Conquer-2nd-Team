@@ -53,18 +53,42 @@
 <div class="page">
     <div class="paper" contenteditable="true">
 
-        <!-- HEADER -->
+        <!-- HEADER 
         <p>
             <b>CodexConquer</b><br>
             <!--123 Business Avenue, Suite 100<br>
             New York, NY 10001<br>
-            Phone: (555) 123-4567 |--> www.codexconquer.com
-        </p>
+            Phone: (555) 123-4567 | www.codexconquer.com
+        </p>-->
+        <!-- HEADER -->
+<div style="display:flex; align-items:center; gap:15px; margin-bottom:20px;">
 
-        <hr style="border:1px solid #2563eb; margin:15px 0 30px;">
+    <img
+  src="{% if logo_path %}{{ logo_path }}{% else %}{{ url_for('static', filename='images/logo.png') }}{% endif %}"
+  style="height:60px;"
+>
+
+
+
+    <div>
+        <div style="font-size:26px; font-weight:bold; color:#1f4fd8;">
+            CODEXCONQUER
+        </div>
+        <div style="font-size:14px;">
+            www.codexconquer.com
+        </div>
+    </div>
+
+</div>
+
+<hr style="border:1px solid #2563eb; margin:15px 0 30px;">
+
+<!-- 👇 ADD THIS WRAPPER -->
+<div style="clear:both;"></div>
+
 
         <!-- TITLE -->
-        <p style="text-align:center; font-weight:bold; font-size:18px;">
+        <p style="text-align:center; font-weight:bold; font-size:18px;margin-top:20px;">
             {{ title }}
         </p>
 

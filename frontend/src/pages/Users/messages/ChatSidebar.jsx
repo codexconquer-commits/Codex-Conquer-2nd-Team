@@ -37,7 +37,7 @@ const ChatSidebar = ({
       {/* ================= Header ================= */}
 
       <div
-        className={`flex items-center justify-between px-4 py-4 border-b
+        className={`flex items-center justify-between px-4 py-4 border-b md:mt-14
         ${isDark ? "border-white/10" : "border-black/10"}`}
       >
 
@@ -51,7 +51,7 @@ const ChatSidebar = ({
           </button>
         )}
 
-        <h2 className="text-lg font-bold tracking-wide font-bold mr-auto ">
+        <h2 className="text-lg font-bold tracking-wide mr-auto">
           Direct Messages
         </h2>
 

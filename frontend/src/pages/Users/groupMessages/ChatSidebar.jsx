@@ -1,7 +1,8 @@
-import { ArrowLeft, Check, Loader, Mic, Plus, Search } from "lucide-react";
+import { ArrowLeft, Check, Loader as LoaderIcon, Mic, Plus, Search } from "lucide-react";
 import { useEffect, useState } from "react";
 import api from "../../../api/axios";
 import { useNavigate } from "react-router";
+//import Loader from '../../../components/Loader'
 
 const BASE = import.meta.env.VITE_BASE_URL;
 
@@ -13,6 +14,7 @@ const ChatSidebar = ({
   isDark,
   activeChat,
   setIsGroupInfoOpen,
+  loader,
   setGroups = () => {},
 }) => {
   const navigate = useNavigate();
@@ -25,9 +27,11 @@ const ChatSidebar = ({
   const [isCreating, setIsCreating] = useState(false);
 
 
+
   // Fetch users when modal opens
   useEffect(() => {
-    if (addPeople) fetchUsers();
+    if (addPeople)
+      fetchUsers();
   }, [addPeople]);
 
   const fetchUsers = async () => {
@@ -468,7 +472,7 @@ const ChatSidebar = ({
                     }
                     focus:outline-none focus:ring-2 focus:ring-blue-400/30`}
                 >
-                  {isCreating && <Loader size={18} className="animate-spin" />}
+                  {isCreating && <LoaderIcon size={18} className="animate-spin" />}
                   {isCreating ? "Creating..." : "Create Group"}
                 </button>
               </div>

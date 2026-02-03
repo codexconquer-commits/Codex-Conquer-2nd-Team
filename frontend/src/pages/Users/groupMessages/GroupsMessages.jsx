@@ -12,6 +12,7 @@ import ChatMessages from "./ChatMessages";
 import ChatSidebar from "./ChatSidebar";
 import GroupInformationPopUp from "./GroupInformationpopUp";
 
+
 const BASE = import.meta.env.VITE_BASE_URL;
 
 const GroupsMessages = () => {
@@ -30,16 +31,25 @@ const GroupsMessages = () => {
   const [isMobile, setIsMobile] = useState(window.innerWidth <= 768);
   const [showChatMobile, setShowChatMobile] = useState(false);
   const [users, setUsers] = useState([]);
+  const [isLoading,setIsLoading] = useState(false);
 
   const messagesEndRef = useRef(null);
+  console.log(isLoading, "This is a group message");
 
   /* ================= USER ================= */
 
   useEffect(() => {
     const loadMe = async () => {
-      const res = await api.get("/api/users/me");
-      setMe(res.data);
-      socket.emit("add-user", res.data._id);
+      try {
+        setIsLoading(true);
+        const res = await api.get("/api/users/me");
+        setMe(res.data);
+        socket.emit("add-user", res.data._id);
+      } catch (error) {
+        console.error(error.message);
+      } finally{
+        setIsLoading(false);
+      }
     };
     loadMe();
   }, []);
@@ -48,6 +58,7 @@ const GroupsMessages = () => {
 
   useEffect(() => {
     const loadGroups = async () => {
+      
       const res = await api.get("/api/groups/myGroups");
 
       const fetchedGroups = res.data || [];
@@ -179,6 +190,7 @@ const GroupsMessages = () => {
         isDark={isDark}
         activeChat={activeChat}
         setIsGroupInfoOpen={setIsGroupInfoOpen}
+        loaderabc={isLoading}
       />
 
       <main

@@ -1,11 +1,14 @@
 import smtplib
 from email.message import EmailMessage
 import os
+from dotenv import load_dotenv
 
-SMTP_SERVER = "smtp.gmail.com"
-SMTP_PORT = 587
-EMAIL_ADDRESS = "codexconquer@gmail.com"        # change later
-EMAIL_PASSWORD = "sdzv dwaw apze bxjg "         # change later
+load_dotenv()
+
+SMTP_SERVER = os.getenv("SMTP_SERVER")
+SMTP_PORT = int(os.getenv("SMTP_PORT"))
+EMAIL_ADDRESS = os.getenv("EMAIL_ADDRESS")
+EMAIL_PASSWORD = os.getenv("EMAIL_PASSWORD")
 
 def send_email(to_email, subject, body, attachment_path=None):
     msg = EmailMessage()
@@ -27,9 +30,7 @@ def send_email(to_email, subject, body, attachment_path=None):
             filename=file_name
         )
 
-    server = smtplib.SMTP(SMTP_SERVER, SMTP_PORT)
-    server.starttls()
-    server.login(EMAIL_ADDRESS, EMAIL_PASSWORD)
-    #server.login('''SENDER_EMAIL, SENDER_PASSWORD'''EMAIL_ADDRESS , EMAIL_PASSWORD)
-    server.send_message(msg)
-    server.quit()
+    with smtplib.SMTP(SMTP_SERVER, SMTP_PORT) as server:
+        server.starttls()
+        server.login(EMAIL_ADDRESS, EMAIL_PASSWORD)
+        server.send_message(msg)

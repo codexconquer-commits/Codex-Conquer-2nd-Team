@@ -26,7 +26,7 @@ const VideoCall = ({
   const localVideoRef = useRef(null);
   const remoteVideoRef = useRef(null);
 
-  /* Attach local stream */
+  /* 🔹 Attach local stream */
   useEffect(() => {
     if (localVideoRef.current && localStream) {
       localVideoRef.current.srcObject = localStream;
@@ -39,7 +39,7 @@ const VideoCall = ({
     };
   }, [localStream]);
 
-  /* Register remote video */
+  /* 🔥 ALWAYS register remote video when call opens */
   useEffect(() => {
     if (open && remoteVideoRef.current) {
       registerRemoteElement(remoteVideoRef.current);
@@ -61,36 +61,37 @@ const VideoCall = ({
       </div>
 
       {/* ================= VIDEO AREA ================= */}
-      <div className="flex-1 relative bg-black pointer-events-none">
-        {/* Remote Video */}
+      <div className="flex-1 relative bg-black">
+        {/* 🔥 Remote Video */}
         <video
           ref={remoteVideoRef}
           autoPlay
           playsInline
-          className="absolute inset-0 w-full h-full object-contain bg-black"
+          className="absolute inset-0 w-full h-full object-cover bg-black"
         />
 
-        {/* Local Preview (only after connected) */}
+        {/* 🔥 Local Preview */}
         {localStream && (
-  <div className="absolute bottom-28 right-4 z-30 w-28 sm:w-36 aspect-video
-                  rounded-xl overflow-hidden border border-white/20
-                  bg-black shadow-xl pointer-events-none">
-    <video
-      ref={localVideoRef}
-      autoPlay
-      muted
-      playsInline
-      className="w-full h-full object-contain bg-black"
-    />
-  </div>
-)}
+          <div className="absolute bottom-24 right-4 z-30
+                          w-28 sm:w-36 aspect-video
+                          rounded-xl overflow-hidden
+                          border border-white/20
+                          bg-black shadow-xl">
+            <video
+              ref={localVideoRef}
+              autoPlay
+              muted
+              playsInline
+              className="w-full h-full object-contain bg-black scale-x-[-1]"
+            />
+          </div>
+        )}
       </div>
 
       {/* ================= CONTROLS ================= */}
       <div
         className="relative z-50 flex items-center justify-center gap-6 py-5
                    bg-black/80 backdrop-blur-md
-                   pointer-events-auto
                    pb-[calc(env(safe-area-inset-bottom)+12px)]"
       >
         {/* Mute */}
@@ -120,14 +121,16 @@ const VideoCall = ({
           <>
             <button
               onClick={onAccept}
-              className="w-16 h-16 rounded-full bg-green-600 flex items-center justify-center hover:bg-green-700 transition"
+              className="w-16 h-16 rounded-full bg-green-600
+                         flex items-center justify-center"
             >
               <PhoneIncoming size={28} />
             </button>
 
             <button
               onClick={onReject}
-              className="w-16 h-16 rounded-full bg-red-600 flex items-center justify-center hover:bg-red-700 transition"
+              className="w-16 h-16 rounded-full bg-red-600
+                         flex items-center justify-center"
             >
               <PhoneOff size={28} />
             </button>
@@ -135,7 +138,8 @@ const VideoCall = ({
         ) : (
           <button
             onClick={onEnd}
-            className="w-16 h-16 rounded-full bg-red-600 flex items-center justify-center hover:bg-red-700 transition"
+            className="w-16 h-16 rounded-full bg-red-600
+                       flex items-center justify-center"
           >
             <PhoneOff size={28} />
           </button>

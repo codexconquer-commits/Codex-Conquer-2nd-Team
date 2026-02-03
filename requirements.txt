@@ -1,3 +1,6 @@
 Flask
+gunicorn
 reportlab
 python-dateutil
+beautifulsoup4
+Werkzeug

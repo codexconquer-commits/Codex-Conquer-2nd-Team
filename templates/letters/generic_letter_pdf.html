@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+</head>
+<body>
+
+<!-- HEADER -->
+<div style="display:flex; align-items:center; gap:15px; margin-bottom:20px;">
+    {% if logo_path %}
+        <img src="{{ logo_path }}" style="height:60px;">
+    {% endif %}
+
+    <div>
+        <div style="font-size:26px; font-weight:bold;">
+            CODEXCONQUER
+        </div>
+        <div style="font-size:14px;">
+            www.codexconquer.com
+        </div>
+    </div>
+</div>
+
+<hr>
+
+<!-- TITLE -->
+<p style="text-align:center; font-weight:bold; font-size:18px;">
+    {{ title }}
+</p>
+
+<!-- DATE -->
+<p><b>Date:</b> {{ today }}</p>
+
+<!-- GREETING -->
+<p>Dear {{ name }},</p>
+
+<!-- BODY -->
+<div>
+
+{% if draft_content %}
+    {{ draft_content | safe }}
+
+{% elif body %}
+    {{ body | safe }}
+
+{% else %}
+
+    {% if letter_type == "Relieving Letter" %}
+        <p>
+            This is to formally acknowledge that you have completed your Internship
+            tenure with <strong>CodeXConquer</strong> from
+            <strong>{{ joining_date }}</strong> to
+            <strong>{{ relieving_date }}</strong>,
+            as a <strong>{{ designation }}</strong>.
+        </p>
+
+        <p>
+            During this period, you demonstrated professionalism, willingness to learn,
+            and a positive work attitude.
+        </p>
+
+        <p>
+            We appreciate your efforts and commitment during your internship.
+        </p>
+
+        <p>
+            If you need any documents or verification, please contact us.
+        </p>
+
+    {% elif letter_type == "Termination Letter" %}
+        <p>
+            This letter is to formally inform you that your employment with CodexConquer
+            is terminated effective {{ today }}.
+        </p>
+
+        <p>
+            You are requested to complete all exit formalities as per company policy.
+        </p>
+
+    {% elif letter_type == "Appreciation Letter" %}
+        <p>
+            I am pleased to write this letter of recommendation for
+            <strong>{{ name }}</strong>, who completed their internship with
+            <strong>CodexConquer</strong> as a {{ designation }}.
+        </p>
+    {% endif %}
+
+{% endif %}
+
+</div>
+
+<br>
+
+<!-- FOOTER -->
+<p>
+    Sincerely,<br><br>
+    <b>Human Resources Department</b><br>
+    CodexConquer
+</p>
+
+</body>
+</html>

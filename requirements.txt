@@ -5,4 +5,5 @@ python-dateutil
 beautifulsoup4
 Werkzeug
 pdfkit
-python-dotenv
+//python-dotenv
+//weasyprint

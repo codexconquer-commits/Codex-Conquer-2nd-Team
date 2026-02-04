@@ -3,18 +3,17 @@ import Logo from "../../../assets/download-removebg-preview.png";
 import Navbar from "../../../components/Navbar";
 import { AppContext } from "../../../context/Theme-Context";
 import socket from "../../../socket/socket.js";
-
 import api from "../../../api/axios";
+
 import ChatHeader from "./ChatHeader";
 import ChatInput from "./ChatInput";
 import ChatMessages from "./ChatMessages";
 import ChatSidebar from "./ChatSidebar";
 import useMessagesSocket from "./useMessagesSocket";
+import Loader from "../../../components/Loader/Loader";
 
 const Messages = () => {
-  const { isDark } = useContext(AppContext);
-
-  
+  const { isDark, setUser } = useContext(AppContext);
 
   const [users, setUsers] = useState([]);
   const [activeChat, setActiveChat] = useState(null);
@@ -28,33 +27,50 @@ const Messages = () => {
   const [isMobile, setIsMobile] = useState(window.innerWidth <= 768);
   const [showChatMobile, setShowChatMobile] = useState(false);
 
+  // 🔥 SPLIT LOADERS
+  const [appLoading, setAppLoading] = useState(true);
+  const [usersLoading, setUsersLoading] = useState(false);
+  const [chatLoading, setChatLoading] = useState(false);
+
   const messagesEndRef = useRef(null);
 
   /* ================= LOAD LOGGED-IN USER ================= */
-const { setUser } = useContext(AppContext);
+  useEffect(() => {
+    const loadMe = async () => {
+      try {
+        setAppLoading(true);
+        const res = await api.get("/api/users/me");
+        setMe(res.data);
+        setUser(res.data);
+        socket.emit("add-user", res.data._id);
+      } catch (err) {
+        console.error(err);
+      } finally {
+        setAppLoading(false);
+      }
+    };
 
-useEffect(() => {
-  api.get("/api/users/me")
-    .then((res) => {
-      setMe(res.data);
-      setUser(res.data); // 🔥 THIS IS REQUIRED
-      socket.emit("add-user", res.data._id);
-    })
-    .catch(console.error);
-}, []);
+    loadMe();
+  }, []);
 
   /* ================= LOAD USERS ================= */
   useEffect(() => {
-    console.log("👥 Fetching users...");
-    api.get("/api/users")
-      .then((res) => {
-        console.log("✅ Users loaded:", res.data);
+    const loadUsers = async () => {
+      try {
+        setUsersLoading(true);
+        const res = await api.get("/api/users");
         setUsers(res.data || []);
-      })
-      .catch(console.error);
+      } catch (err) {
+        console.error(err);
+      } finally {
+        setUsersLoading(false);
+      }
+    };
+
+    loadUsers();
   }, []);
 
-  /* ================= SOCKET MESSAGE LISTENERS ================= */
+  /* ================= SOCKET ================= */
   useMessagesSocket({
     activeChat,
     setMessages,
@@ -76,18 +92,23 @@ useEffect(() => {
 
   /* ================= OPEN CHAT ================= */
   const openChatWithUser = async (userId) => {
-    console.log("📂 Opening chat with:", userId);
+    try {
+      setChatLoading(true);
 
-    const res = await api.post("/api/chats", { userId });
-    setActiveChat(res.data);
+      const chatRes = await api.post("/api/chats", { userId });
+      setActiveChat(chatRes.data);
 
-    socket.emit("join-chat", res.data._id);
-    console.log("📡 socket.emit → join-chat", res.data._id);
+      socket.emit("join-chat", chatRes.data._id);
 
-    const msgs = await api.get(`/api/messages/${res.data._id}`);
-    setMessages(msgs.data || []);
+      const msgRes = await api.get(`/api/messages/${chatRes.data._id}`);
+      setMessages(msgRes.data || []);
 
-    if (isMobile) setShowChatMobile(true);
+      if (isMobile) setShowChatMobile(true);
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setChatLoading(false);
+    }
   };
 
   /* ================= SEND MESSAGE ================= */
@@ -109,6 +130,12 @@ useEffect(() => {
   };
 
   /* ================= RENDER ================= */
+
+  // ✅ ONLY FIRST LOAD
+  if (appLoading) {
+    return <Loader text="Initializing chat app..." />;
+  }
+
   return (
     <div
       className={`flex h-screen overflow-hidden ml-18 font-regular ${
@@ -119,6 +146,7 @@ useEffect(() => {
 
       <ChatSidebar
         users={users}
+        usersLoading={usersLoading}
         onlineUsers={onlineUsers}
         onUserClick={openChatWithUser}
         isMobile={isMobile}
@@ -153,20 +181,23 @@ useEffect(() => {
                 setShowChatMobile(false);
                 setActiveChat(null);
               }}
-              onCall={() =>
-                console.log("🔊 Audio call clicked (handled globally)")
-              }
-              onVideoCall={() =>
-                console.log("🎥 Video call clicked (handled globally)")
-              }
+              onCall={() => console.log("🔊 Audio call")}
+              onVideoCall={() => console.log("🎥 Video call")}
             />
 
-            <ChatMessages
-              messages={messages}
-              me={me}
-              typingUser={typingUser}
-              messagesEndRef={messagesEndRef}
-            />
+            {/* ✅ CHAT AREA LOADER */}
+            {chatLoading ? (
+              <div className="flex-1 flex items-center justify-center">
+                <div className="h-10 w-10 animate-spin rounded-full border-4 border-blue-500 border-t-transparent" />
+              </div>
+            ) : (
+              <ChatMessages
+                messages={messages}
+                me={me}
+                typingUser={typingUser}
+                messagesEndRef={messagesEndRef}
+              />
+            )}
 
             <ChatInput
               text={text}

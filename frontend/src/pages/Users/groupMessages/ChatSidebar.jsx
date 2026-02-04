@@ -112,7 +112,7 @@ const ChatSidebar = ({
 
         {/* Header with improved spacing and icon styling */}
         <div
-          className={`flex items-center  px-5 py-4 border-b ${
+          className={`flex items-center  mt-0 md:mt-10 px-5 py-4 border-b ${
             isDark ? "border-slate-700/50" : "border-gray-200/50"
           } backdrop-blur-sm mt-5`}
         >

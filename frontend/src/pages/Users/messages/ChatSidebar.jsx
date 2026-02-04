@@ -9,6 +9,7 @@ const ChatSidebar = ({
   setShowChatMobile,
   isDark = false,
   activeChat,
+
 }) => {
     const navigate = useNavigate();
   const [searchQuery, setSearchQuery] = useState("");
@@ -37,7 +38,7 @@ const ChatSidebar = ({
       {/* ================= Header ================= */}
 
       <div
-        className={`flex items-center justify-between px-4 py-4 border-b
+        className={`flex items-center mt-0 md:mt-12 justify-between px-4 py-4 border-b
         ${isDark ? "border-white/10" : "border-black/10"}`}
       >
 

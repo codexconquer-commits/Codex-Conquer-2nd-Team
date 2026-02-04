@@ -3,68 +3,87 @@ import Logo from "../../../assets/download-removebg-preview.png";
 import Navbar from "../../../components/Navbar";
 import { AppContext } from "../../../context/Theme-Context";
 import socket from "../../../socket/socket.js";
-
 import api from "../../../api/axios";
+
 import useMessagesSocket from "../messages/useMessagesSocket.js";
 import ChatHeader from "./ChatHeader";
 import ChatInput from "./ChatInput";
 import ChatMessages from "./ChatMessages";
 import ChatSidebar from "./ChatSidebar";
 import GroupInformationPopUp from "./GroupInformationpopUp";
+import Loader from "../../../components/Loader/Loader";
 
 const BASE = import.meta.env.VITE_BASE_URL;
 
 const GroupsMessages = () => {
   const { isDark, user } = useContext(AppContext);
-  const [adminGroups, setAdminGroups] = useState([]);
-  const [isAdmin, setIsAdmin] = useState(false);
+
   const [groups, setGroups] = useState([]);
+  const [adminGroups, setAdminGroups] = useState([]);
   const [activeChat, setActiveChat] = useState(null);
   const [messages, setMessages] = useState([]);
   const [text, setText] = useState("");
   const [me, setMe] = useState(null);
+
   const [onlineUsers, setOnlineUsers] = useState([]);
   const [typingUser, setTypingUser] = useState("");
   const [isGroupInfoOpen, setIsGroupInfoOpen] = useState(false);
 
   const [isMobile, setIsMobile] = useState(window.innerWidth <= 768);
   const [showChatMobile, setShowChatMobile] = useState(false);
-  const [users, setUsers] = useState([]);
+
+  // 🔥 LOADERS
+  const [appLoading, setAppLoading] = useState(true);
+  const [groupsLoading, setGroupsLoading] = useState(false);
+  const [chatLoading, setChatLoading] = useState(false);
+
+  const [isAdmin, setIsAdmin] = useState(false);
 
   const messagesEndRef = useRef(null);
 
-  /* ================= USER ================= */
-
+  /* ================= LOAD USER ================= */
   useEffect(() => {
     const loadMe = async () => {
-      const res = await api.get("/api/users/me");
-      setMe(res.data);
-      socket.emit("add-user", res.data._id);
+      try {
+        setAppLoading(true);
+        const res = await api.get("/api/users/me");
+        setMe(res.data);
+        socket.emit("add-user", res.data._id);
+      } catch (err) {
+        console.error(err);
+      } finally {
+        setAppLoading(false);
+      }
     };
+
     loadMe();
   }, []);
 
-  /* ================= GROUPS ================= */
-
+  /* ================= LOAD GROUPS ================= */
   useEffect(() => {
     const loadGroups = async () => {
-      const res = await api.get("/api/groups/myGroups");
+      try {
+        setGroupsLoading(true);
+        const res = await api.get("/api/groups/myGroups");
+        const fetchedGroups = res.data || [];
 
-      const fetchedGroups = res.data || [];
+        setGroups(fetchedGroups);
 
-      setGroups(fetchedGroups);
-      // 👑 Admin groups nikaalo
-      const adminOnlyGroups = fetchedGroups.filter(
-        (group) => group.groupAdmin?._id === user?._id
-      );
-
-      setAdminGroups(adminOnlyGroups);
+        const adminOnly = fetchedGroups.filter(
+          (g) => g.groupAdmin?._id === user?._id
+        );
+        setAdminGroups(adminOnly);
+      } catch (err) {
+        console.error(err);
+      } finally {
+        setGroupsLoading(false);
+      }
     };
-    loadGroups();
+
+    if (user?._id) loadGroups();
   }, [user?._id]);
 
   /* ================= SOCKET ================= */
-
   useMessagesSocket({
     activeChat,
     setMessages,
@@ -73,7 +92,6 @@ const GroupsMessages = () => {
   });
 
   /* ================= HELPERS ================= */
-
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
@@ -85,27 +103,29 @@ const GroupsMessages = () => {
   }, []);
 
   /* ================= OPEN GROUP CHAT ================= */
-
   const openGroupChat = async (groupId) => {
     setIsGroupInfoOpen(false);
     const group = groups.find((g) => g._id === groupId);
     if (!group) return;
 
-    setActiveChat(group);
+    try {
+      setChatLoading(true);
+      setActiveChat(group);
 
-    // 🔌 join socket room
-    socket.emit("join-chat", groupId);
+      socket.emit("join-chat", groupId);
 
-    // 📩 fetch messages
-    const res = await api.get(`${BASE}/api/messages/${groupId}`);
+      const res = await api.get(`${BASE}/api/messages/${groupId}`);
+      setMessages(res.data || []);
 
-    setMessages(res.data || []);
-
-    if (isMobile) setShowChatMobile(true);
+      if (isMobile) setShowChatMobile(true);
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setChatLoading(false);
+    }
   };
 
   /* ================= SEND MESSAGE ================= */
-
   const sendMessage = async () => {
     setIsGroupInfoOpen(false);
     if (!text.trim() || !activeChat) return;
@@ -114,7 +134,6 @@ const GroupsMessages = () => {
       chatId: activeChat._id,
       text,
     });
-     setIsGroupInfoOpen(false);
 
     setMessages((prev) => [...prev, res.data]);
     setText("");
@@ -125,23 +144,19 @@ const GroupsMessages = () => {
     });
   };
 
-  // ✅ Handle member removal - sync with groups state
+  /* ================= MEMBER REMOVED ================= */
   const handleMemberRemoved = (memberId, groupId) => {
-     setIsGroupInfoOpen(false);
-    setGroups((prevGroups) =>
-      prevGroups.map((g) =>
+    setIsGroupInfoOpen(false);
+
+    setGroups((prev) =>
+      prev.map((g) =>
         g._id === groupId
-          ? {
-              ...g,
-              members: g.members.filter((m) => m._id !== memberId),
-            }
+          ? { ...g, members: g.members.filter((m) => m._id !== memberId) }
           : g
       )
     );
 
-    // Update active chat if viewing the same group
     if (activeChat?._id === groupId) {
-       setIsGroupInfoOpen(false);
       setActiveChat((prev) => ({
         ...prev,
         members: prev.members.filter((m) => m._id !== memberId),
@@ -149,18 +164,21 @@ const GroupsMessages = () => {
     }
   };
 
+  /* ================= ADMIN CHECK ================= */
   useEffect(() => {
-    if (!activeChat || !me) {
-      setIsAdmin(false);
-      return;
-    }
+    if (!activeChat || !me) return setIsAdmin(false);
 
-    const adminCheck =
-      activeChat.groupAdmin?._id?.toString() === me?._id?.toString();
-    setIsAdmin(adminCheck);
+    setIsAdmin(
+      activeChat.groupAdmin?._id?.toString() === me?._id?.toString()
+    );
   }, [activeChat, me]);
 
-  /* ================= UI ================= */
+  /* ================= RENDER ================= */
+
+  // ✅ ONE-TIME APP LOADER
+  if (appLoading) {
+    return <Loader text="Loading groups..." />;
+  }
 
   return (
     <div
@@ -172,7 +190,7 @@ const GroupsMessages = () => {
 
       <ChatSidebar
         groups={groups}
-        setGroups={setGroups}
+        groupsLoading={groupsLoading}
         onUserClick={openGroupChat}
         isMobile={isMobile}
         setShowChatMobile={setShowChatMobile}
@@ -184,20 +202,15 @@ const GroupsMessages = () => {
       <main
         className={
           isMobile && showChatMobile
-            ? "fixed inset-0 z-40 bg-inherit flex flex-col"
-            : "relative flex-1 flex flex-col"
+            ? "fixed inset-0 z-40 bg-inherit flex flex-col "
+            : "relative flex-1 flex flex-col "
         }
       >
         {!activeChat ? (
           <div className="flex-1 flex flex-col items-center justify-center text-center px-4">
             <div className="w-28 h-28 mb-6 rounded-3xl bg-gradient-to-tr from-blue-500 via-purple-500 to-pink-500 flex items-center justify-center shadow-xl">
-              <img
-                src={Logo}
-                alt="App Logo"
-                className="w-16 h-16 rounded-full"
-              />
+              <img src={Logo} alt="App Logo" className="w-16 h-16 rounded-full" />
             </div>
-
             <h1 className="text-3xl font-extrabold">Convo for Desktop</h1>
             <p className="opacity-70 max-w-md mt-3">
               Send and receive messages securely.
@@ -217,13 +230,20 @@ const GroupsMessages = () => {
               onOpenGroupInfo={() => setIsGroupInfoOpen(true)}
             />
 
-            <ChatMessages
-              messages={messages}
-              me={me}
-              typingUser={typingUser}
-              messagesEndRef={messagesEndRef}
-              isDark={isDark}
-            />
+            {/*  CHAT AREA LOADER */}
+            {chatLoading ? (
+              <div className="flex-1 flex items-center justify-center">
+                <div className="h-10 w-10 animate-spin rounded-full border-4 border-blue-500 border-t-transparent" />
+              </div>
+            ) : (
+              <ChatMessages
+                messages={messages}
+                me={me}
+                typingUser={typingUser}
+                messagesEndRef={messagesEndRef}
+                isDark={isDark}
+              />
+            )}
 
             <ChatInput
               text={text}
@@ -237,7 +257,6 @@ const GroupsMessages = () => {
         )}
       </main>
 
-      {/* Group Information Modal */}
       {activeChat && (
         <GroupInformationPopUp
           open={isGroupInfoOpen}

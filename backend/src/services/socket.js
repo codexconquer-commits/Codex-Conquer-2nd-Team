@@ -1,3 +1,5 @@
+import   groupCalling from "./group-calling.js";
+
 const onlineUsers = new Map(); // userId -> Set(socketId)
 
 /* 🔁 Helper: emit event to all sockets of a user */
@@ -105,8 +107,10 @@ const socketHandler = (io) => {
     socket.on("end-video-call", ({ toUserId }) => {
       emitToUser(io, toUserId, "video-call-ended");
     });
+    groupCalling(io, socket, emitToUser);
   });
 };
+
 
 export default socketHandler;
 

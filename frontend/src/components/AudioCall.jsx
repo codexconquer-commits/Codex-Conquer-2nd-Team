@@ -126,7 +126,7 @@ const AudioCall = ({
       </div>
 
       {/* Desktop: CONVO on right */}
-      <div className="ml:auto hidden md:flex items-center  gap-2 font-bold text-lg">  
+      <div className="ml:auto hidden md:flex items-center  gap-2 font-bold text-lg">
         <span className="text-xl">🟣</span>
         <span>CONVO</span>
       </div>

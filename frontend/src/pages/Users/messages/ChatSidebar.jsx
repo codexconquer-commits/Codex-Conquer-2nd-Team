@@ -1,6 +1,7 @@
-import { Mic, X ,ArrowLeft} from "lucide-react";
+import { Mic, X, ArrowLeft } from "lucide-react";
 import { useState } from "react";
 import { useNavigate } from "react-router";
+
 const ChatSidebar = ({
   users = [],
   onlineUsers = [],
@@ -9,9 +10,8 @@ const ChatSidebar = ({
   setShowChatMobile,
   isDark = false,
   activeChat,
-
 }) => {
-    const navigate = useNavigate();
+  const navigate = useNavigate();
   const [searchQuery, setSearchQuery] = useState("");
 
   const filteredUsers = users.filter(
@@ -28,48 +28,47 @@ const ChatSidebar = ({
   return (
     <aside
       className={`
-        ${isMobile ? "absolute left-0 top-14 z-20 w-full " : "relative"}
+        ${isMobile ? "absolute left-0 top-14 z-20 w-full" : "relative"}
         flex flex-col md:w-[340px]
         h-[calc(100vh-3.5rem)]
-        border-r border-white/10 theme-animate
-        ${isDark ? "bg-darkmode text-darkmode" : "bg-lightmode text-lightmode"}
+        border-r theme-animate
+        ${isDark ? "bg-darkmode text-white border-white/10" : "bg-lightmode text-black border-black/10"}
       `}
     >
       {/* ================= Header ================= */}
-
       <div
-        className={`flex items-center justify-between px-4 py-4 border-b md:mt-14
-        className={`flex items-center mt-0 md:mt-12 justify-between px-4 py-4 border-b
-        ${isDark ? "border-white/10" : "border-black/10"}`}
+        className={`
+          flex items-center justify-between px-4 py-4 border-b
+          ${isDark ? "border-white/10" : "border-black/10"}
+          ${isMobile ? "mt-0" : "md:mt-12"}
+        `}
       >
-
-         {isMobile && (
+        {isMobile && (
           <button
             onClick={() => navigate(-1)}
             className="p-2 rounded-lg md:hidden icon-hover"
           >
             <ArrowLeft size={20} />
-
           </button>
         )}
 
         <h2 className="text-lg font-bold tracking-wide mr-auto">
           Direct Messages
         </h2>
-
-
       </div>
 
       {/* ================= Search ================= */}
       <div className="px-4 py-3">
         <div
-          className={`flex items-center gap-2 rounded-full px-4 py-2.5
-          transition-all duration-300
-          ${
-            isDark
-              ? "bg-slate-800/50 border border-slate-700/50"
-              : "bg-gray-100 border border-gray-200"
-          }`}
+          className={`
+            flex items-center gap-2 rounded-full px-4 py-2.5
+            transition-all duration-300
+            ${
+              isDark
+                ? "bg-slate-800/50 border border-slate-700/50"
+                : "bg-gray-100 border border-gray-200"
+            }
+          `}
         >
           <Mic size={18} className="opacity-70" />
           <input
@@ -103,7 +102,8 @@ const ChatSidebar = ({
               <div
                 key={u._id}
                 onClick={() => handleUserClick(u._id)}
-                className={`flex items-center gap-3 px-3 py-2.5 rounded-lg cursor-pointer
+                className={`
+                  flex items-center gap-3 px-3 py-2.5 rounded-lg cursor-pointer
                   transition-all duration-300 group
                   ${
                     isActive
@@ -112,35 +112,38 @@ const ChatSidebar = ({
                         : "bg-blue-100 ring-2 ring-blue-400 shadow-md"
                       : isDark
                       ? "hover:bg-white/15 active:bg-white/25"
-                      : "hover:bg-black/8 active:bg-black/12"
-                  }`}
+                      : "hover:bg-black/10 active:bg-black/20"
+                  }
+                `}
               >
                 {/* Avatar */}
                 <div className="relative flex-shrink-0">
                   <div
-                    className={`w-11 h-11 rounded-full text-white flex items-center
-                    justify-center font-bold text-sm
-                    ${
-                      isActive
-                        ? "bg-gradient-to-br from-blue-500 to-blue-600"
-                        : "bg-gradient-to-br from-blue-400 to-blue-500"
-                    }
-                    group-hover:scale-110 transition-transform duration-300
-                    shadow-sm`}
+                    className={`
+                      w-11 h-11 rounded-full text-white flex items-center
+                      justify-center font-bold text-sm shadow-sm
+                      ${
+                        isActive
+                          ? "bg-gradient-to-br from-blue-500 to-blue-600"
+                          : "bg-gradient-to-br from-blue-400 to-blue-500"
+                      }
+                      group-hover:scale-110 transition-transform duration-300
+                    `}
                   >
                     {u?.fullName?.[0]?.toUpperCase()}
                   </div>
 
                   {/* Online Indicator */}
                   <span
-                    className={`absolute bottom-0 right-0 w-3 h-3 rounded-full
-                      border-2 transition-colors duration-300
+                    className={`
+                      absolute bottom-0 right-0 w-3 h-3 rounded-full border-2
                       ${
                         isOnline
                           ? "bg-green-500 border-green-600"
                           : "bg-gray-400 border-gray-500"
                       }
-                      ${isDark ? "ring-1 ring-gray-800" : "ring-1 ring-white"}`}
+                      ${isDark ? "ring-1 ring-gray-800" : "ring-1 ring-white"}
+                    `}
                   />
                 </div>
 
@@ -150,25 +153,21 @@ const ChatSidebar = ({
                     {u.fullName}
                   </p>
                   <p
-                    className={`text-xs truncate opacity-70
-                    ${isDark ? "text-gray-300" : "text-gray-600"}`}
+                    className={`text-xs truncate opacity-70 ${
+                      isDark ? "text-gray-300" : "text-gray-600"
+                    }`}
                   >
                     Click to Chat
                   </p>
                 </div>
 
-                {/* Old Vertical Active Bar */}
                 {isActive && (
-                  <div
-                    className="flex-shrink-0 w-1.5 h-6 rounded-full
-                    bg-gradient-to-b from-blue-400 to-blue-600"
-                  />
+                  <div className="flex-shrink-0 w-1.5 h-6 rounded-full bg-gradient-to-b from-blue-400 to-blue-600" />
                 )}
               </div>
             );
           })}
 
-          {/* Empty State */}
           {filteredUsers.length === 0 && (
             <div className="flex justify-center py-10">
               <p className="text-sm opacity-60">

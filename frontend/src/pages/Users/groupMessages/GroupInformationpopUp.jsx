@@ -2,6 +2,7 @@ import { Lock, Trash2, UserPlus, X } from "lucide-react";
 import { useContext, useEffect, useState } from "react";
 import api from "../../../api/axios";
 import { AppContext } from "../../../context/Theme-Context";
+import Loader from '../../../components/Loader';
 
 const GroupInformationPopUp = ({
   open,

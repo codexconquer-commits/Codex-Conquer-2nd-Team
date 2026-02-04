@@ -13,6 +13,7 @@ import ChatSidebar from "./ChatSidebar";
 import GroupInformationPopUp from "./GroupInformationpopUp";
 import Loader from "../../../components/Loader/Loader";
 
+
 const BASE = import.meta.env.VITE_BASE_URL;
 
 const GroupsMessages = () => {
@@ -31,6 +32,11 @@ const GroupsMessages = () => {
 
   const [isMobile, setIsMobile] = useState(window.innerWidth <= 768);
   const [showChatMobile, setShowChatMobile] = useState(false);
+  const [users, setUsers] = useState([]);
+  const [isLoading,setIsLoading] = useState(false);
+
+  const messagesEndRef = useRef(null);
+  console.log(isLoading, "This is a group message");
 
   // 🔥 LOADERS
   const [appLoading, setAppLoading] = useState(true);
@@ -45,6 +51,14 @@ const GroupsMessages = () => {
   useEffect(() => {
     const loadMe = async () => {
       try {
+        setIsLoading(true);
+        const res = await api.get("/api/users/me");
+        setMe(res.data);
+        socket.emit("add-user", res.data._id);
+      } catch (error) {
+        console.error(error.message);
+      } finally{
+        setIsLoading(false);
         setAppLoading(true);
         const res = await api.get("/api/users/me");
         setMe(res.data);
@@ -62,6 +76,18 @@ const GroupsMessages = () => {
   /* ================= LOAD GROUPS ================= */
   useEffect(() => {
     const loadGroups = async () => {
+      
+      const res = await api.get("/api/groups/myGroups");
+
+      const fetchedGroups = res.data || [];
+
+      setGroups(fetchedGroups);
+      // 👑 Admin groups nikaalo
+      const adminOnlyGroups = fetchedGroups.filter(
+        (group) => group.groupAdmin?._id === user?._id
+      );
+
+      setAdminGroups(adminOnlyGroups);
       try {
         setGroupsLoading(true);
         const res = await api.get("/api/groups/myGroups");
@@ -197,6 +223,7 @@ const GroupsMessages = () => {
         isDark={isDark}
         activeChat={activeChat}
         setIsGroupInfoOpen={setIsGroupInfoOpen}
+        loaderabc={isLoading}
       />
 
       <main

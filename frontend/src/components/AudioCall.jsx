@@ -91,69 +91,166 @@ const AudioCall = ({
   const mm = String(Math.floor(callTime / 60)).padStart(2, "0");
   const ss = String(callTime % 60).padStart(2, "0");
 
-  /* ================= FULLSCREEN POPUP ================= */
-  return (
-    <div className="fixed inset-0 z-[9999]
-                    flex items-center justify-center
-                    bg-black/40 backdrop-blur-sm">
+  {/* ================= FULLSCREEN POPUP ================= */}
 
-      <div
-        className={`w-80 rounded-2xl p-4 shadow-2xl
-        ${isDark ? "bg-gray-900 text-white" : "bg-white text-black"}`}
-      >
-        {/* HEADER */}
-        <div className="text-center mb-4">
-          <h3 className="text-lg font-semibold">{callerName}</h3>
-          <p className="text-sm opacity-70">
-            {isConnected
-              ? `Connected • ${mm}:${ss}`
-              : isIncoming
-              ? "Incoming call…"
-              : "Calling…"}
-          </p>
+ return (
+  <div
+    className="
+      fixed inset-0 z-[9999]
+      flex flex-col
+      bg-gradient-to-b from-[#2c3e73] to-[#0b1437]
+      md:from-[#2c3e73] md:to-[#0b1437]
+    "
+  >
+
+    {/* ================= TOP BAR ================= */}
+<div className="relative flex items-center px-4 py-3 text-white md:px-10 md:py-6">
+      {/* Mobile: Minimize */}
+      <button
+        onClick={() => setIsMinimized(true)}
+        className="md:hidden w-10 h-10 rounded-full bg-white/90 text-black
+                  flex items-center justify-center"
+        >
+        <Minimize2 size={18} />
+      </button>
+
+      {/* Center title */}
+      <div className="absolute left-1/2 -translate-x-1/2 text-center">
+        <h2 className="text-base md:text-lg font-semibold">
+          {callerName}
+        </h2>
+        <div className="flex items-center justify-center gap-1 text-xs opacity-80">
+          <span>🔒</span>
+          <span>End-to-end encrypted</span>
         </div>
-
-        {/* CONTROLS */}
-        <div className="flex justify-between items-center mb-4">
-          <button onClick={() => setIsMinimized(true)}>
-            <Minimize2 />
-          </button>
-
-          {!isIncoming && (
-            <button
-              onClick={onClose}
-              className="bg-red-600 text-white p-3 rounded-full"
-            >
-              <Phone />
-            </button>
-          )}
-
-          <button onClick={onMuteToggle}>
-            {isMuted ? <MicOff /> : <Mic />}
-          </button>
-        </div>
-
-        {/* INCOMING ACTIONS */}
-        {isIncoming && !isConnected && (
-          <div className="flex justify-center gap-6">
-            <button
-              onClick={onAccept}
-              className="bg-green-600 p-3 rounded-full text-white"
-            >
-              <Check />
-            </button>
-
-            <button
-              onClick={onReject}
-              className="bg-red-600 p-3 rounded-full text-white"
-            >
-              <X />
-            </button>
-          </div>
-        )}
       </div>
+
+      {/* Desktop: CONVO on right */}
+      <div className="ml:auto hidden md:flex items-center  gap-2 font-bold text-lg">  
+        <span className="text-xl">🟣</span>
+        <span>CONVO</span>
+      </div>
+</div>
+
+
+    {/* ================= CENTER CALL INFO ================= */}
+    <div className="flex-1 flex flex-col items-center justify-center text-white">
+  <div
+    className="
+      w-40 h-40 md:w-36 md:h-36
+      rounded-3xl bg-blue-200
+      flex items-center justify-center
+      mb-6 md:mb-4
+    "
+  >
+    <span className="text-7xl md:text-6xl text-blue-900">👤</span>
+  </div>
+
+  <h2 className="text-2xl md:text-3xl font-semibold">
+    {callerName}
+  </h2>
+
+  <p className="mt-2 text-sm opacity-70">
+    {isConnected ? `${mm}:${ss}` : "Calling..."}
+  </p>
+</div>
+
+
+
+    {/* ================= BOTTOM CONTROLS ================= */}
+<div className="pb-8 md:pb-12">
+  {/* Mobile controls (pill) */}
+  <div className="flex justify-center md:hidden">
+    <div className="flex items-center gap-4 bg-[#0f1c4d]
+                    px-6 py-4 rounded-full shadow-2xl">
+      <button
+        onClick={onMuteToggle}
+        className="w-12 h-12 rounded-full bg-white flex items-center justify-center"
+      >
+        {isMuted ? <MicOff /> : <Mic />}
+      </button>
+
+      <button className="w-12 h-12 rounded-full bg-white flex items-center justify-center">
+        👤+
+      </button>
+
+      <button className="w-12 h-12 rounded-full bg-white flex items-center justify-center">
+        💬
+      </button>
+
+      <button
+        onClick={onClose}
+        className="w-12 h-12 rounded-full bg-red-500 flex items-center justify-center text-white"
+      >
+        <Phone />
+      </button>
     </div>
-  );
+  </div>
+
+  {/* Desktop controls (spread layout) */}
+  <div className="hidden md:flex items-center justify-between px-20">
+    {/* Left */}
+    <div className="flex gap-4">
+      <button
+        onClick={() => setIsMinimized(true)}
+        className="w-12 h-12 rounded-full bg-white flex items-center justify-center"
+      >
+        <Minimize2 />
+      </button>
+
+      <button
+        onClick={onMuteToggle}
+        className="w-12 h-12 rounded-full bg-white flex items-center justify-center"
+      >
+        {isMuted ? <MicOff /> : <Mic />}
+      </button>
+    </div>
+
+    {/* Center */}
+    <div className="flex gap-6">
+      <button className="w-14 h-14 rounded-full bg-white flex items-center justify-center">
+        👤+
+      </button>
+      <button className="w-14 h-14 rounded-full bg-white flex items-center justify-center">
+        💬
+      </button>
+    </div>
+
+    {/* Right */}
+    <button
+      onClick={onClose}
+      className="w-14 h-14 rounded-full bg-red-500 flex items-center justify-center text-white"
+    >
+      <Phone />
+    </button>
+  </div>
+</div>
+
+
+    {/* ================= INCOMING ACTIONS ================= */}
+    {isIncoming && !isConnected && (
+      <div className="flex justify-center gap-8 pb-8">
+        <button
+          onClick={onAccept}
+          className="w-14 h-14 rounded-full bg-green-500
+                     flex items-center justify-center text-white"
+        >
+          <Check />
+        </button>
+
+        <button
+          onClick={onReject}
+          className="w-14 h-14 rounded-full bg-red-500
+                     flex items-center justify-center text-white"
+        >
+          <X />
+        </button>
+      </div>
+    )}
+  </div>
+);
+
+
 };
 
 export default AudioCall;

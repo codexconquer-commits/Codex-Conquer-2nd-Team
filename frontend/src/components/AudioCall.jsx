@@ -10,6 +10,9 @@ import {
 import { useContext, useEffect, useRef, useState } from "react";
 import { AppContext } from "../context/Theme-Context";
 
+import Draggable from "react-draggable";
+
+
 const AudioCall = ({
   open,
   onClose,
@@ -28,6 +31,9 @@ const AudioCall = ({
 
   const ringAudioRef = useRef(null);
   const engageAudioRef = useRef(null);
+  const nodeRef = useRef(null);
+  const wasDragged = useRef(false);
+
 
   /* ================= TIMER ================= */
   useEffect(() => {
@@ -74,19 +80,41 @@ const AudioCall = ({
 
   /* ================= MINIMIZED VIEW ================= */
   if (isMinimized) {
-    return (
-      <button
-        onClick={() => setIsMinimized(false)}
-        className="fixed bottom-6 right-6 z-[9999]
-                   flex items-center gap-2
-                   bg-green-600 text-white
-                   px-4 py-2 rounded-full shadow-xl"
+  return (
+    <Draggable
+      nodeRef={nodeRef}
+      defaultPosition={{
+        x: window.innerWidth - 220,
+        y: window.innerHeight - 100,
+      }}
+      onStart={() => {
+        wasDragged.current = false;
+      }}
+      onDrag={() => {
+        wasDragged.current = true;
+      }}
+    >
+      <div
+        ref={nodeRef}
+        className="fixed z-[9999] cursor-move"
       >
-        <Maximize2 />
-        {callerName}
-      </button>
-    );
-  }
+        <button
+          onClick={() => {
+            if (!wasDragged.current) {
+              setIsMinimized(false);
+            }
+          }}
+          className="flex items-center gap-2
+                     bg-green-600 text-white
+                     px-4 py-2 rounded-full shadow-xl"
+        >
+          <Maximize2 />
+          {callerName}
+        </button>
+      </div>
+    </Draggable>
+  );
+}
 
   const mm = String(Math.floor(callTime / 60)).padStart(2, "0");
   const ss = String(callTime % 60).padStart(2, "0");
@@ -170,14 +198,6 @@ const AudioCall = ({
         {isMuted ? <MicOff /> : <Mic />}
       </button>
 
-      <button className="w-12 h-12 rounded-full bg-white flex items-center justify-center">
-        👤+
-      </button>
-
-      <button className="w-12 h-12 rounded-full bg-white flex items-center justify-center">
-        💬
-      </button>
-
       <button
         onClick={onClose}
         className="w-12 h-12 rounded-full bg-red-500 flex items-center justify-center text-white"
@@ -206,15 +226,7 @@ const AudioCall = ({
       </button>
     </div>
 
-    {/* Center */}
-    <div className="flex gap-6">
-      <button className="w-14 h-14 rounded-full bg-white flex items-center justify-center">
-        👤+
-      </button>
-      <button className="w-14 h-14 rounded-full bg-white flex items-center justify-center">
-        💬
-      </button>
-    </div>
+    
 
     {/* Right */}
     <button

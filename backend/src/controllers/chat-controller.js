@@ -23,26 +23,52 @@ let chat = await Chat.findOne({
   res.status(200).json(chat);
 };
 
+import Message from "../models/message-model.js";
+
 export const getMyChats = async (req, res) => {
-  if (!req.user || !req.user._id) {
-    return res.status(401).json({ message: "Unauthorized user" });
+  try {
+    if (!req.user || !req.user._id) {
+      return res.status(401).json({ message: "Unauthorized user" });
+    }
+
+    const userId = req.user._id;
+
+    // 🔥 DM + Group chats
+    const chats = await Chat.find({
+      members: userId,
+    })
+      .populate("members", "-password")
+      .populate({
+        path: "lastMessage",
+        populate: {
+          path: "senderId",
+          select: "fullName email",
+        },
+      })
+      .sort({ updatedAt: -1 });
+
+    // 🔵 add unread count (seen=false)
+    const chatsWithUnread = await Promise.all(
+      chats.map(async (chat) => {
+        const unreadCount = await Message.countDocuments({
+          chatId: chat._id,
+          senderId: { $ne: userId },
+          seen: false,
+        });
+
+        return {
+          ...chat.toObject(),
+          unreadCount,
+        };
+      })
+    );
+
+    console.log("getMyChats success:", chatsWithUnread);
+
+    res.status(200).json(chatsWithUnread);
+  } catch (error) {
+    console.error("getMyChats error:", error);
+    res.status(500).json({ message: "Server error" });
   }
-
-  const chats = await// DM only
-Chat.find({
-  members: req.user._id,
-  isGroupChat: false,
-})
-
-// Group only
-Chat.find({
-  members: req.user._id,
-  isGroupChat: true,
-})
-    .populate("members", "-password")
-    .populate("lastMessage")
-    .sort({ updatedAt: -1 });
-
-  res.status(200).json(chats);
 };
 

@@ -22,9 +22,22 @@ export const sendMessage = async (req, res) => {
 };
 
 export const getMessages = async (req, res) => {
-  const messages = await Message.find({
-    chatId: req.params.chatId,
-  }).populate("senderId", "fullName");
+  const chatId = req.params.chatId;
+  const userId = req.user._id;
+
+  // 🔥 mark messages as seen
+  await Message.updateMany(
+    {
+      chatId,
+      senderId: { $ne: userId }, // jo maine nahi bheje
+      seen: false,
+    },
+    { $set: { seen: true } }
+  );
+
+  const messages = await Message.find({ chatId })
+    .populate("senderId", "fullName");
 
   res.status(200).json(messages);
+  console.log(messages);
 };

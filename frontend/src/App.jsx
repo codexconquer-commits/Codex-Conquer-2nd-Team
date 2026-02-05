@@ -10,7 +10,7 @@ import { CallTriggerProvider } from "./context/CallTriggerContext.jsx";
 
 /* ================= LAZY PAGES ================= */
 
-const Home = lazy(() => import("./pages/Users/Home.jsx"));
+const Home = lazy(() => import("./pages/Users/Home/Home.jsx"));
 const Login = lazy(() => import("./pages/Users/Login.jsx"));
 const SignUp = lazy(() => import("./pages/Users/SignUp.jsx"));
 const ForgetPassword = lazy(() => import("./pages/Users/ForgetPassword.jsx"));
